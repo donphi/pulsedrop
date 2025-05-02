@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light mode defaults */
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #111827;
+  --color-card: #f9fafb;
+  --color-card-foreground: #374151;
+
+  --color-primary: #FC4C02;
+  --color-primary-hover: #E34400;
+  --color-primary-active: #C23800;
+  --color-primary-muted: #FDCAB9;
+
+  --color-secondary: #4F46E5;
+  --color-secondary-hover: #4338CA;
+  --color-secondary-active: #3730A3;
+  --color-secondary-muted: #C7D2FE;
+
+  --color-accent: #facc15;
+  --color-accent-hover: #eab308;
+
+  --color-neutral: #2a323c;
+  --color-neutral-hover: #1d232a;
+
+  --color-info: #0ea5e9;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  --color-overlay: rgba(107,114,128,0.75);
+
+  /* Radius */
+  --radius-sm: 0.125rem;
+  --radius: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Shadows */
+  --shadow-card: 0 4px 16px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03);
+  --shadow-button: 0 2px 6px rgba(0,0,0,0.1);
+  --shadow-dialog: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* Dark mode overrides */
+.dark {
+  --color-background: #111827;
+  --color-foreground: #f9fafb;
+  --color-card: #1f2937;
+  --color-card-foreground: #f9fafb;
+
+  --color-primary: #fc6e38; /* adjusted for better contrast */
+  --color-primary-hover: #fb570d;
+  --color-primary-active: #e34400;
+  --color-primary-muted: #7f3d1e;
+
+  --color-secondary: #6366f1;
+  --color-secondary-hover: #4f46e5;
+  --color-secondary-active: #4338ca;
+  --color-secondary-muted: #312e81;
+
+  --color-accent: #fcd34d;
+  --color-accent-hover: #fbbf24;
+
+  --color-neutral: #374151;
+  --color-neutral-hover: #1f2937;
+
+  --color-info: #38bdf8;
+  --color-success: #4ade80;
+  --color-warning: #facc15;
+  --color-error: #f87171;
+
+  --color-overlay: rgba(0,0,0,0.75);
+}

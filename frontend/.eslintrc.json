@@ -1,0 +1,23 @@
+{
+    "extends": ["next/core-web-vitals", "eslint:recommended"],
+    "plugins": ["tailwindcss"],
+    "rules": {
+      "tailwindcss/no-custom-classname": [
+        "error",
+        {
+          "whitelist": ["^bg-background$", "^bg-card$", "^bg-primary$", "^bg-secondary$", "^bg-accent$", "^bg-neutral$", "^text-foreground$", "^text-cardForeground$", "^hover:bg-primary-hover$", "^hover:bg-secondary-hover$", "^ring-inset$", "^ring-\\d$", "^rounded-.*$", "^shadow-.*$", "^px-.*$", "^py-.*$", "^p-.*$", "^m-.*$", "^mx-.*$", "^my-.*$", "^gap-.*$", "^grid-cols-.*$", "^flex$", "^justify-.*$", "^items-.*$", "^block$", "^inline-.*$", "^w-.*$", "^h-.*$", "^max-w-.*$", "^max-h-.*$", "^min-w-.*$", "^min-h-.*$", "^sm:.*$", "^md:.*$", "^lg:.*$", "^xl:.*$", "^2xl:.*$", "^dark:.*$", "^focus:.*$", "^focus-visible:.*$", "^transition.*$", "^ease.*$", "^duration.*$"]
+        }
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "Literal[value=/bg-(red|blue|green|yellow|indigo|purple|pink|gray|white|black|#[a-fA-F0-9]{3,6})/]",
+          "message": "Hardcoded Tailwind colors are forbidden. Use semantic CSS variables from globals.css."
+        },
+        {
+          "selector": "Literal[value=/text-(red|blue|green|yellow|indigo|purple|pink|gray|white|black|#[a-fA-F0-9]{3,6})/]",
+          "message": "Hardcoded Tailwind colors are forbidden. Use semantic CSS variables from globals.css."
+        }
+      ]
+    }
+  }
