@@ -1,0 +1,14 @@
+# frontend/docker-compose.yml
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: . # Specifies the build context is the current directory (frontend/)
+      dockerfile: Dockerfile # Specifies the Dockerfile to use for building
+    container_name: phd_frontend # Assigns a specific name to the container
+    ports:
+      - "3000:3000" # Maps port 3000 on the host to port 3000 in the container
+    env_file:
+      - .env # Loads environment variables from the .env file located in the frontend directory
+    restart: unless-stopped # Configures the container to restart automatically unless manually stopped
