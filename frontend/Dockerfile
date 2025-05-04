@@ -11,7 +11,7 @@ COPY package*.json ./
 
 # Install dependencies
 # Use npm ci for faster, reproducible builds
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the application code
 COPY . .
@@ -41,7 +41,7 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/package*.json ./
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copy built application artifacts from the builder stage
 # Ensure correct ownership for the non-root user

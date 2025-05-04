@@ -1,6 +1,9 @@
 // app/settings/page.tsx
+'use client'
+
 import SettingsLayout from '@/components/layouts/SettingsLayout';
-import { Button, TextInput } from '@/components/ui';
+import { Button } from '@/components/ui/Button';
+import { TextInput } from '@/components/ui/TextInput'
 
 export default function Settings() {
   return (

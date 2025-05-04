@@ -3,14 +3,13 @@
 import { useState, FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react'; // Import signIn from next-auth/react
-import { supabase } from '../../lib/supabaseClient'; // Using relative path
 import { Button } from '@/components/ui/Button'; // Assuming Button is correctly aliased
-import { Input } from '@/components/ui/Input'; // Assuming Input is correctly aliased
+import { TextInput } from '@/components/ui/TextInput'; // Assuming Input is correctly aliased
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState<string | null>(null); // Separate state for email errors
+  const [localError, setLocalError] = useState<string | null>(null); // State for errors from this form's actions
   const router = useRouter();
   const searchParams = useSearchParams(); // Get search params
 
@@ -35,27 +34,39 @@ export function LoginForm() {
 
   // Get error code from URL query parameter
   const urlError = searchParams.get('error');
-  // Determine the message to display based on URL error or local email error
-  const displayError = urlError ? (errorMessages[urlError] ?? errorMessages.Default) : emailError;
+  // Determine the message to display based on URL error or local form error
+  const displayError = urlError ? (errorMessages[urlError] ?? errorMessages.Default) : localError;
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
-    setEmailError(null); // Clear previous email errors
+    setLocalError(null); // Clear previous local errors
 
-    // NOTE: This uses Supabase direct auth, not NextAuth credentials provider.
-    // This might need refactoring later if full NextAuth integration for email/password is desired.
-    const { error: supabaseError } = await supabase.auth.signInWithPassword({ email, password });
+    // Use NextAuth signIn with 'credentials' provider
+    const result = await signIn('credentials', {
+      redirect: false, // Prevent NextAuth from redirecting automatically, handle manually
+      email: email,
+      password: password,
+    });
 
-    if (supabaseError) {
-      setEmailError(supabaseError.message); // Show Supabase specific error for email login
-      return;
+    if (result?.error) {
+      // If NextAuth returns an error, map it or show a generic message
+      // The error code comes from the authorize function returning null or throwing an error
+      // Or from NextAuth internal errors
+      const errorMessage = errorMessages[result.error] ?? errorMessages.CredentialsSignin; // Default to CredentialsSignin
+      setLocalError(errorMessage);
+    } else if (result?.ok && !result.error) {
+      // Login successful, redirect to dashboard
+      // The redirect might also be handled by a callbackUrl if preferred
+      router.push('/dashboard');
+      router.refresh(); // Refresh server components after login
+    } else {
+        // Handle unexpected cases
+        setLocalError(errorMessages.Default);
     }
-
-    router.push('/dashboard');
   };
 
   const handleStravaLogin = async () => {
-    setEmailError(null); // Clear email errors before attempting Strava login
+    setLocalError(null); // Clear local errors before attempting Strava login
     // Use NextAuth signIn for Strava.
     // Errors are handled by NextAuth redirecting back here with ?error=...
     // The callbackUrl specifies where to go on SUCCESSFUL login.
@@ -73,22 +84,22 @@ export function LoginForm() {
         </div>
       )}
 
-      <Input
+      <TextInput
         id="email"
         type="email"
         required
-        placeholder="Email address"
+        label="Email address" // Use label instead of placeholder
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(id, value) => setEmail(value)} // Update onChange signature
       />
 
-      <Input
+      <TextInput
         id="password"
         type="password"
         required
-        placeholder="Password"
+        label="Password" // Use label instead of placeholder
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(id, value) => setPassword(value)} // Update onChange signature
       />
 
       <Button type="submit" className="w-full">
@@ -96,16 +107,16 @@ export function LoginForm() {
       </Button>
 
       <div className="flex items-center gap-2">
-        <div className="flex-1 border-t border-neutral-muted"></div>
-        <span className="text-sm text-neutral">or</span>
-        <div className="flex-1 border-t border-neutral-muted"></div>
+        <div className="flex-1 border-t border-primary-muted"></div>
+        <span className="text-sm text-mutedText">or</span>
+        <div className="flex-1 border-t border-primary-muted"></div>
       </div>
 
       <Button
         type="button"
-        variant="secondary"
+        // variant="secondary" // Remove invalid variant prop
         onClick={handleStravaLogin}
-        className="w-full bg-primary hover:bg-primary-hover"
+        className="w-full bg-secondary" // Use bg-secondary and remove conflicting primary styles
       >
         Continue with Strava
       </Button>

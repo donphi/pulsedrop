@@ -2,7 +2,7 @@
 import { ReactNode } from 'react';
 import ThemeProvider from '@/providers/ThemeProvider';
 import Footer from '@/components/layouts/Footer';
-import './globals.css';
+import '@/styles/globals.css';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

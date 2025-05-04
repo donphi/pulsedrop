@@ -1,4 +1,3 @@
-// tailwind.config.js
 module.exports = {
     darkMode: 'class',
     content: ['./app/**/*.tsx', './components/**/*.tsx'],
@@ -9,6 +8,7 @@ module.exports = {
           foreground: 'var(--color-foreground)',
           card: 'var(--color-card)',
           cardForeground: 'var(--color-card-foreground)',
+  
           primary: {
             DEFAULT: 'var(--color-primary)',
             hover: 'var(--color-primary-hover)',
@@ -28,11 +28,22 @@ module.exports = {
           neutral: {
             DEFAULT: 'var(--color-neutral)',
             hover: 'var(--color-neutral-hover)',
+            muted: 'var(--color-neutral-muted)',
           },
+          transparent: {
+            transparent: 'var(--color-transparent)',
+            transparentWhite: 'var(--color-white-transparent)',
+            transparentBlack: 'var(--color-black-transparent)',
+            transparentPrimary: 'var(--color-primary-transparent)',
+          },
+          error: {
+            DEFAULT: 'var(--color-error)',
+            muted: 'var(--color-error-muted)',
+          },
+          mutedText: 'var(--color-mutedText)',
           info: 'var(--color-info)',
           success: 'var(--color-success)',
           warning: 'var(--color-warning)',
-          error: 'var(--color-error)',
           overlay: 'var(--color-overlay)',
         },
         borderRadius: {
@@ -47,6 +58,12 @@ module.exports = {
           card: 'var(--shadow-card)',
           button: 'var(--shadow-button)',
           dialog: 'var(--shadow-dialog)',
+          primaryTransparent: '0 0 10px var(--color-primary-transparent)',
+        },
+        ringColor: {
+            blackTransparent:   'var(--color-black-transparent)',
+            transparentWhite:   'var(--color-white-transparent)',
+            transparentPrimary: 'var(--color-primary-transparent)',
         },
         spacing: {
           '128': '32rem',

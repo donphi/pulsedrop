@@ -1,12 +1,63 @@
 import NextAuth, { type NextAuthOptions, type Account, type Profile, type User, type Session } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
 import StravaProvider from 'next-auth/providers/strava';
-import { supabaseAdmin } from './supabaseServiceRoleClient'; // Use the service role client for admin tasks
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { supabaseAdmin } from '@/lib/supabaseServiceRoleClient';
 
-// Type definitions (adjust based on actual Strava profile structure and your DB schema)
-// These might need refinement once Supabase types are generated and Strava response is confirmed.
+// Define the structure of a Strava athlete based on the database schema
+interface StravaAthleteData {
+  strava_id: number;
+  username?: string;
+  firstname?: string;
+  lastname?: string;
+  bio?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  sex?: string | null;
+  profile_medium?: string;
+  profile?: string;
+  friend?: boolean;
+  follower?: boolean;
+  premium?: boolean;
+  summit?: boolean;
+  strava_created_at?: string | null;
+  strava_updated_at?: string | null;
+  badge_type_id?: number;
+  weight?: number;
+  profile_original?: string;
+  follower_count?: number;
+  friend_count?: number;
+  mutual_friend_count?: number;
+  athlete_type?: number;
+  date_preference?: string;
+  measurement_preference?: string;
+  ftp?: number;
+  strava_access_token?: string;
+  strava_refresh_token?: string;
+  strava_token_expires_at?: string | null;
+  strava_scope?: string;
+  last_fetched_at?: string;
+}
+
+// Define the structure of a Supabase error
+interface SupabaseError {
+  message: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}
+
+// Define the structure of a user from the database
+interface DbUser {
+  id: string;
+  email: string;
+  display_name: string;
+  strava_athlete_id?: number;
+}
+
 interface StravaProfile extends Profile {
-  id: number; // Strava Athlete ID
+  id: number;
   firstname?: string;
   lastname?: string;
   username?: string;
@@ -15,14 +66,13 @@ interface StravaProfile extends Profile {
   state?: string;
   country?: string;
   sex?: 'M' | 'F' | null;
-  profile_medium?: string; // URL
-  profile?: string; // URL
+  profile_medium?: string;
+  profile?: string;
   premium?: boolean;
   summit?: boolean;
-  created_at?: string; // ISO Date string
-  updated_at?: string; // ISO Date string
+  created_at?: string;
+  updated_at?: string;
   weight?: number;
-  // Add other fields as needed from Strava API response
 }
 
 interface CustomJWT extends JWT {
@@ -30,13 +80,12 @@ interface CustomJWT extends JWT {
   refreshToken?: string;
   accessTokenExpires?: number;
   stravaId?: number;
-  userId?: string; // Our application's user ID (from public.users)
+  userId?: string;
   error?: string;
 }
 
-// Define the expected structure of the user object in the session
 interface CustomSessionUser {
-  id?: string; // Our application's user ID (from public.users)
+  id?: string;
   name?: string | null;
   email?: string | null;
   image?: string | null;
@@ -46,12 +95,11 @@ interface CustomSession extends Session {
   accessToken?: string;
   refreshToken?: string;
   stravaId?: number;
-  userId?: string; // Our application's user ID (duplicate for direct access if needed)
+  userId?: string;
   error?: string;
-  user?: CustomSessionUser; // Override the default user type
+  user?: CustomSessionUser;
 }
 
-// Ensure environment variables are defined
 const stravaClientId = process.env.STRAVA_CLIENT_ID;
 const stravaClientSecret = process.env.STRAVA_CLIENT_SECRET;
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
@@ -60,6 +108,7 @@ if (!stravaClientId) throw new Error('Missing environment variable: STRAVA_CLIEN
 if (!stravaClientSecret) throw new Error('Missing environment variable: STRAVA_CLIENT_SECRET');
 if (!nextAuthSecret) throw new Error('Missing environment variable: NEXTAUTH_SECRET');
 
+
 export const authOptions: NextAuthOptions = {
   providers: [
     StravaProvider({
@@ -67,21 +116,80 @@ export const authOptions: NextAuthOptions = {
       clientSecret: stravaClientSecret,
       authorization: {
         params: {
-          scope: 'read,activity:read_all,profile:read_all', // Request necessary scopes
+          scope: 'read,activity:read_all,profile:read_all',
         },
       },
     }),
-    // Add other providers if needed
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "your@email.com" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials: Record<string, string> | undefined): Promise<User | null> {
+        if (!credentials?.email || !credentials?.password) {
+          console.error('Credentials provider missing email or password');
+          return null;
+        }
+
+        if (!supabaseAdmin) {
+          console.error('Supabase admin client not initialized');
+          return null;
+        }
+
+        try {
+          const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+            email: credentials.email,
+            password: credentials.password,
+          });
+
+          if (authError || !authData?.user) {
+            console.error('Supabase auth error in Credentials provider:', authError?.message);
+            return null;
+          }
+
+          const supabaseUser = authData.user;
+          
+          // We already checked supabaseAdmin is not null above, but TypeScript doesn't track this through the async flow
+          if (!supabaseAdmin) {
+            console.error('Supabase admin client not initialized');
+            return null;
+          }
+          
+          if (!supabaseUser.email) {
+            console.error('User email is missing from Supabase auth data');
+            return null;
+          }
+          
+          const { data: appUser, error: dbError } = await supabaseAdmin
+            .from('users')
+            .select('id, email, display_name')
+            .eq('email', supabaseUser.email)
+            .single() as { data: DbUser | null, error: SupabaseError | null };
+
+          if (dbError || !appUser) {
+            console.error('Error fetching user from DB after Supabase auth, or user not found:', dbError?.message);
+            return null;
+          }
+
+          return {
+            id: appUser.id,
+            email: appUser.email,
+            name: appUser.display_name,
+          };
+
+        } catch (error: unknown) {
+          console.error('Unexpected error in Credentials authorize:', error);
+          return null;
+        }
+      }
+    })
   ],
   secret: nextAuthSecret,
   session: {
-    strategy: 'jwt', // Using JWT strategy for session management
+    strategy: 'jwt',
   },
   callbacks: {
-    /**
-     * Called on successful sign in.
-     * Handles creating/updating user and athlete records in Supabase.
-     */
     async signIn({ user, account, profile }: { user: User; account: Account | null; profile?: Profile }): Promise<boolean | string> {
       if (account?.provider === 'strava' && profile && supabaseAdmin) {
         const stravaProfile = profile as StravaProfile;
@@ -89,11 +197,10 @@ export const authOptions: NextAuthOptions = {
 
         if (!stravaId) {
           console.error('Strava profile missing ID:', stravaProfile);
-          return '/login?error=OAuthAccountNotLinked'; // Redirect with error
+          return '/login?error=OAuthAccountNotLinked';
         }
 
         try {
-          // 1. Check if strava_athlete exists
           const { data: existingAthlete, error: athleteError } = await supabaseAdmin
             .from('strava_athletes')
             .select('strava_id')
@@ -105,7 +212,7 @@ export const authOptions: NextAuthOptions = {
             return '/login?error=DatabaseError';
           }
 
-          const athleteData = {
+          const athleteData: StravaAthleteData = {
             strava_id: stravaId,
             username: stravaProfile.username,
             firstname: stravaProfile.firstname,
@@ -130,10 +237,13 @@ export const authOptions: NextAuthOptions = {
           };
 
           if (existingAthlete) {
-            // 2a. Athlete exists, update tokens and profile info
+            // Using 'as any' to bypass TypeScript's type checking due to Supabase client being initialized with 'unknown' type
+            // This is necessary because when using SupabaseClient<unknown>, the update/insert methods expect 'never' as parameter type
+            // Use a double type casting to satisfy TypeScript
+            // First cast to unknown, then to a generic object type that Supabase can accept
             const { error: updateError } = await supabaseAdmin
               .from('strava_athletes')
-              .update(athleteData)
+              .update(athleteData as unknown as Record<string, unknown>)
               .eq('strava_id', stravaId);
 
             if (updateError) {
@@ -142,25 +252,23 @@ export const authOptions: NextAuthOptions = {
             }
             console.log(`Strava athlete updated: ${stravaId}`);
           } else {
-            // 2b. Athlete does not exist, create athlete and user records
-            // Create strava_athlete first
+            // Using 'as any' to bypass TypeScript's type checking due to Supabase client being initialized with 'unknown' type
+            // This is necessary because when using SupabaseClient<unknown>, the insert/update methods expect 'never' as parameter type
+            // Use a double type casting to satisfy TypeScript
+            // First cast to unknown, then to a generic object type that Supabase can accept
             const { error: insertAthleteError } = await supabaseAdmin
               .from('strava_athletes')
-              .insert(athleteData);
+              .insert(athleteData as unknown as Record<string, unknown>);
 
             if (insertAthleteError) {
               console.error('Error inserting Strava athlete:', insertAthleteError);
-              // Potential conflict if username is not unique? Handle specific errors if needed.
               return '/login?error=DatabaseError';
             }
             console.log(`Strava athlete created: ${stravaId}`);
 
-            // Create corresponding user record in public.users
-            // Use Strava profile info for initial user details
-            const newUserEmail = user.email; // Email should be provided by NextAuth from Strava
+            const newUserEmail = user.email;
             if (!newUserEmail) {
                 console.error('Email missing from Strava profile/NextAuth user object.');
-                // Decide how to handle missing email - maybe redirect with specific error?
                 return '/login?error=EmailRequired';
             }
 
@@ -176,7 +284,6 @@ export const authOptions: NextAuthOptions = {
             }
 
             if (existingUserByEmail) {
-                // User with this email exists, link them to the new Strava athlete
                 const { error: linkUserError } = await supabaseAdmin
                     .from('users')
                     .update({ strava_athlete_id: stravaId })
@@ -189,119 +296,99 @@ export const authOptions: NextAuthOptions = {
                 console.log(`Existing user ${existingUserByEmail.id} linked to Strava athlete ${stravaId}`);
 
             } else {
-                // User with this email does not exist, create a new user record
                 const { data: newUser, error: insertUserError } = await supabaseAdmin
                     .from('users')
                     .insert({
                         email: newUserEmail,
                         strava_athlete_id: stravaId,
-                        // Populate display_name, potentially from Strava firstname/lastname
                         display_name: `${stravaProfile.firstname || ''} ${stravaProfile.lastname || ''}`.trim() || stravaProfile.username || 'New User',
-                        // app_preferences: {}, // Initialize preferences if needed
                     })
-                    .select('id') // Select the ID of the newly created user
-                    .single(); // Expect a single record
+                    .select('id')
+                    .single();
 
                 if (insertUserError || !newUser) {
                     console.error('Error inserting new user:', insertUserError);
-                    // Rollback? Or handle inconsistency? For now, log and return error.
-                    // Consider deleting the just-created strava_athlete record if user creation fails.
                     return '/login?error=DatabaseError';
                 }
                 console.log(`New user created: ${newUser.id} linked to Strava athlete ${stravaId}`);
             }
           }
-          return true; // Sign in successful
-        } catch (error) {
+          return true;
+        } catch (error: unknown) {
           console.error('Unexpected error during Strava sign in:', error);
           return '/login?error=SignInFailed';
         }
       }
-      // Allow other providers or scenarios
       return true;
     },
 
-    /**
-     * Called whenever a JWT is created or updated.
-     * Persists access token, expiry, refresh token, and IDs in the JWT.
-     */
     async jwt({ token, user, account, profile }: { token: JWT; user?: User; account?: Account | null; profile?: Profile }): Promise<JWT> {
       const customToken = token as CustomJWT;
 
-      // Initial sign in
-      if (account && user && profile && account.provider === 'strava') {
-        const stravaProfile = profile as StravaProfile;
-        customToken.accessToken = account.access_token;
-        customToken.refreshToken = account.refresh_token;
-        customToken.accessTokenExpires = account.expires_at ? account.expires_at * 1000 : undefined; // Convert to ms
-        customToken.stravaId = stravaProfile.id;
+      if (account && user) {
+        if (account.provider === 'strava' && profile) {
+          const stravaProfile = profile as StravaProfile;
+          customToken.accessToken = account.access_token;
+          customToken.refreshToken = account.refresh_token;
+          customToken.accessTokenExpires = account.expires_at ? account.expires_at * 1000 : undefined;
+          customToken.stravaId = stravaProfile.id;
 
-        // Fetch our application user ID from public.users based on stravaId
-        if (supabaseAdmin && customToken.stravaId) {
-            try {
-                const { data: appUser, error } = await supabaseAdmin
-                    .from('users')
-                    .select('id')
-                    .eq('strava_athlete_id', customToken.stravaId)
-                    .single();
+          if (supabaseAdmin && customToken.stravaId) {
+              try {
+                  const { data: appUser, error } = await supabaseAdmin
+                      .from('users')
+                      .select('id')
+                      .eq('strava_athlete_id', customToken.stravaId)
+                      .single() as { data: DbUser | null, error: SupabaseError | null };
 
-                if (error || !appUser) {
-                    console.error('Error fetching user ID for JWT:', error);
-                    customToken.error = "UserNotFoundInDB";
-                } else {
-                    customToken.userId = appUser.id;
-                }
-            } catch (dbError) {
-                console.error('DB error fetching user ID for JWT:', dbError);
-                customToken.error = "DatabaseError";
-            }
+                  if (error || !appUser) {
+                      console.error('Error fetching user ID for JWT (Strava):', error);
+                      customToken.error = "UserNotFoundInDB";
+                  } else {
+                      customToken.userId = appUser.id;
+                  }
+              } catch (dbError: unknown) {
+                  console.error('DB error fetching user ID for JWT (Strava):', dbError);
+                  customToken.error = "DatabaseError";
+              }
+          }
+        } else if (account.provider === 'credentials') {
+          if (!user.id) {
+            console.error('User ID is missing from credentials provider');
+            customToken.error = "MissingUserId";
+          } else {
+            customToken.userId = user.id;
+          }
         }
-        return customToken;
       }
-
-      // TODO: Implement token refresh logic if needed
-      // Check if the access token is expired
-      // if (customToken.accessTokenExpires && Date.now() >= customToken.accessTokenExpires) {
-      //   console.log('Access token expired, attempting refresh...');
-      //   // Call refreshAccessToken function (needs implementation)
-      //   // return refreshAccessToken(customToken);
-      // }
-
-      return customToken; // Return previous token if not expired or not initial sign in
+      
+      return customToken;
     },
 
-    /**
-     * Called whenever a session is checked.
-     * Exposes necessary data to the client-side session object.
-     */
     async session({ session, token }: { session: Session; token: JWT }): Promise<Session> {
       const customSession = session as CustomSession;
       const customToken = token as CustomJWT;
 
-      // Add data from JWT to the session
-      customSession.accessToken = customToken.accessToken;
-      customSession.refreshToken = customToken.refreshToken; // Be careful about exposing refresh token to client
-      customSession.stravaId = customToken.stravaId;
-      customSession.userId = customToken.userId;
-      customSession.error = customToken.error; // Pass potential errors
+      // Only set properties if they exist in the token
+      if (customToken.accessToken) customSession.accessToken = customToken.accessToken;
+      if (customToken.refreshToken) customSession.refreshToken = customToken.refreshToken;
+      if (customToken.stravaId) customSession.stravaId = customToken.stravaId;
+      if (customToken.userId) customSession.userId = customToken.userId;
+      if (customToken.error) customSession.error = customToken.error;
 
-      // Add userId to the session.user object, creating it if necessary
-      // The user object might already exist from the default session population
       customSession.user = {
-        ...customSession.user, // Preserve existing user properties (like name, email, image)
-        id: customToken.userId, // Add our application user ID
+        ...customSession.user,
+        // Only set the ID if it exists
+        ...(customToken.userId ? { id: customToken.userId } : {})
       };
 
       return customSession;
     },
   },
   pages: {
-    signIn: '/login', // Redirect users to custom login page
-    error: '/login', // Redirect users to login page on error (will pass error query param)
+    signIn: '/login',
+    error: '/login',
   },
-  // Add debug option if needed during development
-  // debug: process.env.NODE_ENV === 'development',
 };
 
-// Export handlers for the API route
 export const { handlers, signIn, signOut, auth } = NextAuth(authOptions);

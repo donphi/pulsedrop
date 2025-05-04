@@ -2,8 +2,9 @@
 'use client';
 import { settingsNavigation, secondaryNavigation } from '@/lib/config';
 import Link from 'next/link';
+import { ReactNode } from 'react';
 
-export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <aside className="hidden lg:flex w-72 flex-col bg-card shadow-card">
@@ -22,7 +23,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       </aside>
 
       <main className="flex-1 overflow-auto p-6">
-        <nav className="flex border-b border-neutral-muted mb-4">
+        <nav className="flex border-b border-primary-muted mb-4">
           {secondaryNavigation.map((item) => (
             <Link
               key={item.name}

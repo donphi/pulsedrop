@@ -1,3 +1,6 @@
+'use client'
+
+import { Suspense } from 'react';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { AuthTemplate } from '@/components/auth/AuthTemplate';
 
@@ -9,7 +12,9 @@ export default function LoginPage() {
       footerLinkText="Register now"
       footerLinkHref="/register"
     >
-      <LoginForm />
+      <Suspense fallback={<div>Loading...</div>}>
+        <LoginForm />
+      </Suspense>
     </AuthTemplate>
   );
 }

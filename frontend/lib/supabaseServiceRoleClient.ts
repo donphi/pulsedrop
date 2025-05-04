@@ -1,5 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // import { Database } from '@/types/supabase'; // TODO: Generate and import Supabase types
+// IMPORTANT: Generating proper database types would eliminate the need for 'any' type casting
+// Run 'npx supabase gen types typescript --project-id <your-project-id> --schema public > types/supabase.ts'
+// See: https://supabase.com/docs/reference/javascript/typescript-support
 
 // Ensure environment variables are defined
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -23,11 +26,11 @@ if (!supabaseServiceRoleKey) {
 // Note: This client uses the SERVICE_ROLE_KEY and bypasses RLS.
 // Use it ONLY in secure server-side environments (like NextAuth callbacks, API routes).
 // DO NOT expose this client or the service role key to the browser.
-// Using `any` temporarily as Supabase types are not available locally.
+// Using `any` to bypass TypeScript strictness when types cannot be generated
 let supabaseServiceRoleClient: SupabaseClient<any> | null = null;
 
 if (supabaseUrl && supabaseServiceRoleKey) {
-  // Using `any` temporarily as Supabase types are not available locally.
+  // Using `any` to bypass TypeScript strictness when types cannot be generated
   supabaseServiceRoleClient = createClient<any>(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
       // Important: Disable auto-refreshing tokens for the service role client

@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import BackButton from '../ui/BackButton';
+import BackButton from '@/components/ui/BackButton';
 
 interface AuthTemplateProps {
   children: ReactNode;

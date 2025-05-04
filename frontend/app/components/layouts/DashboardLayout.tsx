@@ -2,9 +2,9 @@
 'use client';
 import { dashboardNavigation } from '@/lib/config';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (

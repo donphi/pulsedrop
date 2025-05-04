@@ -29,3 +29,9 @@ import {
     { name: 'Teams', href: '/settings/teams' },
     { name: 'Integrations', href: '/settings/integrations' },
   ];
+
+export const footerNavigation = [
+    { name: 'Login', href: '/login' },
+    { name: 'Privacy Policy', href: '/privacy-policy' },
+    { name: 'Terms & Conditions', href: '/terms-and-conditions' },
+  ];
