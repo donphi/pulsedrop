@@ -7,8 +7,8 @@
   --color-background: #ffffff;
   --color-foreground: #111827;
   /* Transparency */
-  --color-transparent: rgba(0,0,0,0)
-  --color-white-transparent: rgba(255, 255, 255, 0.05);
+  --color-transparent: rgba(0,0,0,0);
+  --color-white-transparent: rgba(253, 207, 188, 0.2);
   --color-black-transparent: rgba(0, 0, 0, 0.1);
 
   --color-card: #f9fafb;
@@ -20,17 +20,21 @@
   --color-primary-muted: #FDCAB9;
   --color-primary-muted-opacity: rgba(253, 202, 185, 0.2);
   --color-primary-transparent: rgba(252, 76, 2, 0.1);
+  --color-primary-pulse-opacity: rgba(252, 76, 2, 0.1); /* Opacity for pulse effect */
 
-  --color-secondary: #4F46E5;
-  --color-secondary-hover: #4338CA;
-  --color-secondary-active: #3730A3;
-  --color-secondary-muted: #C7D2FE;
+  --color-secondary:            #01B1FC;
+  --color-secondary-hover:      #019ED9;  /* ∼15% darker */
+  --color-secondary-active:     #017CAA;  /* ∼30% darker */
+  --color-secondary-muted:      #CDEEFF;  /* light tint */
+  --color-secondary-muted-opacity: rgba(205, 238, 255, 0.2);
+  --color-secondary-transparent:    rgba(1,  177, 252, 0.1);
 
   --color-accent: #facc15;
   --color-accent-hover: #eab308;
 
   --color-neutral: #2a323c;
   --color-neutral-hover: #1d232a;
+  --color-neutral-muted: #e2e8f0;
 
   --color-info: #0ea5e9;
   --color-success: #22c55e;
@@ -41,6 +45,24 @@
 
   /* Muted Text */
   --color-mutedText: #6b7280;
+
+  /* New ECG Pulse variables */
+  --color-ecg-normal: var(--color-primary);
+  --color-ecg-normal-glow: rgba(var(--color-primary-rgb), 0.3);
+  
+  --color-ecg-moderate: var(--color-warning); 
+  --color-ecg-moderate-glow: rgba(245, 158, 11, 0.4);
+  
+  --color-ecg-high: var(--color-error);
+  --color-ecg-high-glow: rgba(239, 68, 68, 0.5);
+  
+  --color-ecg-max: rgb(255, 0, 0);
+  --color-ecg-max-glow: rgba(255, 0, 0, 0.6);
+  
+  /* Heart rate thresholds */
+  --bpm-normal: 70;
+  --bpm-moderate: 120;
+  --bpm-high: 150;
 
   /* Radius */
   --radius-sm: 0.125rem;
@@ -60,6 +82,7 @@
   --color-background: #111827;
   --color-foreground: #f9fafb;
 /* Transparency */
+  --color-transparent: rgba(0,0,0,0);
   --color-white-transparent: rgba(255, 255, 255, 0.1);
   --color-black-transparent: rgba(0, 0, 0, 0.2);
 
@@ -72,17 +95,21 @@
   --color-primary-muted: #7f3d1e;
   --color-primary-muted-opacity: rgba(127, 61, 30, 0.2);
   --color-primary-transparent: rgba(252, 110, 56, 0.1);  /* fc6e38 with 0.1 opacity */
+  --color-primary-pulse-opacity: rgba(252, 110, 56, 0.3); /* Opacity for pulse effect (dark) */
 
-  --color-secondary: #6366f1;
-  --color-secondary-hover: #4f46e5;
-  --color-secondary-active: #4338ca;
-  --color-secondary-muted: #312e81;
+  --color-secondary:            #01B1FC;
+  --color-secondary-hover:      #019ED9;  /* ∼15% darker */
+  --color-secondary-active:     #017CAA;  /* ∼30% darker */
+  --color-secondary-muted:      #CDEEFF;  /* light tint */
+  --color-secondary-muted-opacity: rgba(205, 238, 255, 0.2);
+  --color-secondary-transparent:    rgba(1,  177, 252, 0.1);
 
   --color-accent: #fcd34d;
   --color-accent-hover: #fbbf24;
 
   --color-neutral: #374151;
   --color-neutral-hover: #1f2937;
+  --color-neutral-muted: #4b5563;
 
   --color-info: #38bdf8;
   --color-success: #4ade80;

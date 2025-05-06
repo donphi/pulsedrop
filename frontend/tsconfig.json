@@ -19,10 +19,12 @@
         "@/*": ["./app/*"],
         "@/lib/*": ["./lib/*"],
         "@/providers/*": ["./providers/*"],
-        "@/styles/*": ["./styles/*"]
+        "@/styles/*": ["./styles/*"],
+        "@/public/*": ["./public/*"]
       }
     },
-    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-    "exclude": ["node_modules"]
+    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+    "exclude": ["node_modules"],
+    "plugins": [{ "name": "next" }]
   }
   

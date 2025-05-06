@@ -26,6 +26,7 @@
           "^text-(foreground|cardForeground|mutedText)$",
           "^ring-(primary-muted|white|black/10|blackTransparent|inset|transparentWhite|transparentBlack|transparentPrimary)$",
           "^shadow-(button|card|dialog|primaryTransparent)$",
+          "^drop-shadow-primary-pulse$",
           "^rounded(-.*)?$",
           "^border(-.*)?$",
           "^border-(transparentWhite|transparentBlack|transparentPrimary)$",
@@ -52,7 +53,16 @@
           "^dark.*$",
           "^transition.*$",
           "^ease.*$",
-          "^duration.*$"
+          "^duration.*$",
+          "^bg-(success-muted|error-muted)$",
+          "^text-(success|error)$",
+          "^bg-ecg-(normal|moderate|high|max)$",
+          "^drop-shadow-ecg-(normal|moderate|high|max)$",
+          "^bg-neutral-muted$",
+          "^space-[xy]-[0-9]+$",
+          "^h-[0-9]+(\\.[0-9]+)?$",
+          "^overflow-hidden$",
+          "^ease-.*$"
         ]
       }
     ],

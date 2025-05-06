@@ -21,7 +21,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`w-full rounded-md bg-primary text-cardForeground px-3 py-1.5 text-sm font-semibold shadow-button hover:bg-primary-hover focus:outline-primary ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+      className={`w-full rounded-full bg-primary text-cardForeground px-3 py-1.5 text-sm font-semibold shadow-button hover:bg-primary-hover focus:outline-primary ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
     >
       {children}
     </button>
