@@ -21,13 +21,23 @@
   --color-primary-muted-opacity: rgba(253, 202, 185, 0.2);
   --color-primary-transparent: rgba(252, 76, 2, 0.1);
   --color-primary-pulse-opacity: rgba(252, 76, 2, 0.1); /* Opacity for pulse effect */
+  
+  /* RGB values for color interpolation */
+  --color-primary-rgb-r: 252;
+  --color-primary-rgb-g: 76;
+  --color-primary-rgb-b: 2;
 
-  --color-secondary:            #01B1FC;
-  --color-secondary-hover:      #019ED9;  /* ∼15% darker */
-  --color-secondary-active:     #017CAA;  /* ∼30% darker */
-  --color-secondary-muted:      #CDEEFF;  /* light tint */
+  --color-secondary: #01B1FC;
+  --color-secondary-hover: #019ED9;  /* ∼15% darker */
+  --color-secondary-active: #017CAA;  /* ∼30% darker */
+  --color-secondary-muted: #CDEEFF;  /* light tint */
   --color-secondary-muted-opacity: rgba(205, 238, 255, 0.2);
-  --color-secondary-transparent:    rgba(1,  177, 252, 0.1);
+  --color-secondary-transparent: rgba(1, 177, 252, 0.1);
+  
+  /* RGB values for color interpolation */
+  --color-secondary-rgb-r: 1;
+  --color-secondary-rgb-g: 177;
+  --color-secondary-rgb-b: 252;
 
   --color-accent: #facc15;
   --color-accent-hover: #eab308;
@@ -40,24 +50,38 @@
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
+  --color-error-muted: rgba(239, 68, 68, 0.1);
+  --color-success-muted: rgba(34, 197, 94, 0.1);
 
   --color-overlay: rgba(107,114,128,0.75);
 
   /* Muted Text */
   --color-mutedText: #6b7280;
 
-  /* New ECG Pulse variables */
-  --color-ecg-normal: var(--color-primary);
-  --color-ecg-normal-glow: rgba(var(--color-primary-rgb), 0.3);
+  /* ECG Pulse variables */
+  --color-ecg-normal: #22c55e; /* Success green */
+  --color-ecg-normal-glow: rgba(34, 197, 94, 0.3);
+  --color-ecg-normal-rgb-r: 34;
+  --color-ecg-normal-rgb-g: 197;
+  --color-ecg-normal-rgb-b: 94;
   
-  --color-ecg-moderate: var(--color-warning); 
+  --color-ecg-moderate: #f59e0b; /* Warning yellow */
   --color-ecg-moderate-glow: rgba(245, 158, 11, 0.4);
+  --color-ecg-moderate-rgb-r: 245;
+  --color-ecg-moderate-rgb-g: 158;
+  --color-ecg-moderate-rgb-b: 11;
   
-  --color-ecg-high: var(--color-error);
+  --color-ecg-high: #ef4444; /* Error red */
   --color-ecg-high-glow: rgba(239, 68, 68, 0.5);
+  --color-ecg-high-rgb-r: 239;
+  --color-ecg-high-rgb-g: 68;
+  --color-ecg-high-rgb-b: 68;
   
-  --color-ecg-max: rgb(255, 0, 0);
+  --color-ecg-max: #ff0000; /* Pure red */
   --color-ecg-max-glow: rgba(255, 0, 0, 0.6);
+  --color-ecg-max-rgb-r: 255;
+  --color-ecg-max-rgb-g: 0;
+  --color-ecg-max-rgb-b: 0;
   
   /* Heart rate thresholds */
   --bpm-normal: 70;
@@ -75,13 +99,22 @@
   --shadow-card: 0 4px 16px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03);
   --shadow-button: 0 2px 6px rgba(0,0,0,0.1);
   --shadow-dialog: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --shadow-primary-transparent: 0 0 10px var(--color-primary-transparent);
+  
+  /* Drop Shadows for filter:drop-shadow() */
+  --drop-shadow-primary-pulse: 0 0 8px hsl(var(--color-primary-pulse-opacity));
+  --drop-shadow-primary-pulse-opacity: 0 0 4px var(--color-primary-pulse-opacity);
+  --drop-shadow-ecg-normal: 0 0 6px var(--color-ecg-normal-glow);
+  --drop-shadow-ecg-moderate: 0 0 8px var(--color-ecg-moderate-glow);
+  --drop-shadow-ecg-high: 0 0 10px var(--color-ecg-high-glow);
+  --drop-shadow-ecg-max: 0 0 12px var(--color-ecg-max-glow);
 }
 
 /* Dark mode overrides */
 .dark {
   --color-background: #111827;
   --color-foreground: #f9fafb;
-/* Transparency */
+  /* Transparency */
   --color-transparent: rgba(0,0,0,0);
   --color-white-transparent: rgba(255, 255, 255, 0.1);
   --color-black-transparent: rgba(0, 0, 0, 0.2);
@@ -96,13 +129,23 @@
   --color-primary-muted-opacity: rgba(127, 61, 30, 0.2);
   --color-primary-transparent: rgba(252, 110, 56, 0.1);  /* fc6e38 with 0.1 opacity */
   --color-primary-pulse-opacity: rgba(252, 110, 56, 0.3); /* Opacity for pulse effect (dark) */
+  
+  /* RGB values for color interpolation */
+  --color-primary-rgb-r: 252;
+  --color-primary-rgb-g: 110;
+  --color-primary-rgb-b: 56;
 
-  --color-secondary:            #01B1FC;
-  --color-secondary-hover:      #019ED9;  /* ∼15% darker */
-  --color-secondary-active:     #017CAA;  /* ∼30% darker */
-  --color-secondary-muted:      #CDEEFF;  /* light tint */
+  --color-secondary: #01B1FC;
+  --color-secondary-hover: #019ED9;  /* ∼15% darker */
+  --color-secondary-active: #017CAA;  /* ∼30% darker */
+  --color-secondary-muted: #CDEEFF;  /* light tint */
   --color-secondary-muted-opacity: rgba(205, 238, 255, 0.2);
-  --color-secondary-transparent:    rgba(1,  177, 252, 0.1);
+  --color-secondary-transparent: rgba(1, 177, 252, 0.1);
+  
+  /* RGB values for color interpolation */
+  --color-secondary-rgb-r: 1;
+  --color-secondary-rgb-g: 177;
+  --color-secondary-rgb-b: 252;
 
   --color-accent: #fcd34d;
   --color-accent-hover: #fbbf24;
@@ -115,14 +158,46 @@
   --color-success: #4ade80;
   --color-warning: #facc15;
   --color-error: #f87171;
+  --color-error-muted: rgba(248, 113, 113, 0.1);
+  --color-success-muted: rgba(74, 222, 128, 0.1);
 
   --color-overlay: rgba(0,0,0,0.75);
+  
+  /* ECG Pulse variables - adapted for dark mode */
+  --color-ecg-normal: #4ade80; /* Brighter green for dark mode */
+  --color-ecg-normal-glow: rgba(74, 222, 128, 0.3);
+  --color-ecg-normal-rgb-r: 74;
+  --color-ecg-normal-rgb-g: 222;
+  --color-ecg-normal-rgb-b: 128;
+  
+  --color-ecg-moderate: #facc15; /* Brighter yellow for dark mode */
+  --color-ecg-moderate-glow: rgba(250, 204, 21, 0.4);
+  --color-ecg-moderate-rgb-r: 250;
+  --color-ecg-moderate-rgb-g: 204;
+  --color-ecg-moderate-rgb-b: 21;
+  
+  --color-ecg-high: #f87171; /* Brighter red for dark mode */
+  --color-ecg-high-glow: rgba(248, 113, 113, 0.5);
+  --color-ecg-high-rgb-r: 248;
+  --color-ecg-high-rgb-g: 113;
+  --color-ecg-high-rgb-b: 113;
+  
+  --color-ecg-max: #ff6b6b; /* Slightly lighter red for dark mode */
+  --color-ecg-max-glow: rgba(255, 107, 107, 0.6);
+  --color-ecg-max-rgb-r: 255;
+  --color-ecg-max-rgb-g: 107;
+  --color-ecg-max-rgb-b: 107;
+
+  /* Shadow adjustments for dark mode */
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-button: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-dialog: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* Background Hero Gradient */
 .bg-hero-gradient {
-    background-image: linear-gradient(to bottom, var(--color-primary-muted-opacity));
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: top;
-  }
+  background-image: linear-gradient(to bottom, var(--color-primary-muted-opacity));
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: top;
+}

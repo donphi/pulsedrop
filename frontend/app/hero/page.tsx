@@ -1,6 +1,6 @@
 // app/hero/page.tsx
-import HeroSection from '@/components/ui/HeroSectionTop';
+import DashboardHero from '@/components/ui/DashboardHero';
 
 export default function HeroPage() {
-  return <HeroSection />;
+  return <DashboardHero darkMode={false} />;
 }
