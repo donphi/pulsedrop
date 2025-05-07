@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * DashboardHero Component
  *
@@ -6,7 +8,7 @@
  * These classes are properly defined in tailwind.config.js and are necessary for the
  * visual design of the dashboard hero section.
  */
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { ChevronRightIcon } from '@heroicons/react/20/solid';
 import DashboardWrapper from '@/components/ui/DashboardWrapper';
 import Image from 'next/image';
@@ -16,6 +18,20 @@ interface HeroProps {
 }
 
 const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
+  // State to track the current color for the frame
+  const [frameColor, setFrameColor] = useState('#22c55e'); // Default green to match initial state
+  
+  // Reference to the frame element
+  const frameRef = useRef<HTMLDivElement>(null);
+  
+  // Handler to receive color updates from the DashboardWrapper - use useCallback to stabilize
+  const handleColorChange = useCallback((color: string) => {
+    setFrameColor(color);
+  }, []);
+  
+  // Define a consistent color transition duration
+  const colorTransitionDuration = 2.5; // 2.5 seconds
+  
   const textColor = darkMode ? 'text-foreground' : 'text-foreground';
   const textColorSecondary = darkMode ? 'text-mutedText' : 'text-mutedText';
   const accentColor = 'text-primary';
@@ -40,7 +56,10 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                 />
                 <div className="mt-24 sm:mt-32 lg:mt-16">
                   <a href="#" className="inline-flex space-x-6">
-                    <span className={`rounded-full ${accentBgLight} px-3 py-1 text-sm/6 font-semibold ${accentColor} ring-1 ring-inset ring-transparent-transparentPrimary`}>
+                    <span 
+                      className={`rounded-full ${accentBgLight} px-3 py-1 text-sm/6 font-semibold ring-1 ring-inset ring-transparent-transparentPrimary`}
+                      style={{ color: frameColor, transition: `color ${colorTransitionDuration}s ease-in-out` }}
+                    >
                       Elite Dashboard
                     </span>
                     <span className={`inline-flex items-center space-x-2 text-sm/6 font-medium ${textColorSecondary}`}>
@@ -58,7 +77,11 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                 <div className="mt-10 flex items-center gap-x-6">
                   <a
                     href="#"
-                    className={`rounded-md ${darkMode ? accentBgDark : 'bg-primary'} px-3.5 py-2.5 text-sm font-semibold text-foreground shadow-button hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`}
+                    className="rounded-md px-3.5 py-2.5 text-sm font-semibold text-foreground shadow-button hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                    style={{ 
+                      backgroundColor: frameColor,
+                      transition: `background-color ${colorTransitionDuration}s ease-in-out`
+                    }}
                   >
                     Start monitoring
                   </a>
@@ -71,13 +94,30 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
           </div>
           <div className="mt-20 sm:mt-24 md:mx-auto md:max-w-2xl lg:mx-0 lg:mt-0 lg:w-screen">
             <div
-              className={`absolute inset-y-0 right-1/2 -z-10 -mr-10 w-[200%] skew-x-[-30deg] ${bgColor} shadow-xl ${glowColor} ring-1 ring-transparent-transparentPrimary md:-mr-20 lg:-mr-36`}
+              className={`absolute inset-y-0 right-1/2 -z-10 -mr-10 w-[200%] skew-x-[-30deg] ${bgColor} shadow-xl ring-1 ring-transparent-transparentPrimary md:-mr-20 lg:-mr-36`}
+              style={{ 
+                boxShadow: `0 0 15px 5px ${frameColor}25`,
+                transition: `box-shadow ${colorTransitionDuration}s ease-in-out`
+              }}
               aria-hidden="true"
             />
             <div className="shadow-lg md:rounded-3xl">
-              <div className={`${darkMode ? 'bg-primary' : 'bg-primary'} [clip-path:inset(0)] md:[clip-path:inset(0_round_theme(borderRadius.3xl))]`}>
+              <div 
+                ref={frameRef}
+                className="[clip-path:inset(0)] md:[clip-path:inset(0_round_theme(borderRadius.3xl))]"
+                style={{ 
+                  backgroundColor: frameColor,
+                  transition: `background-color ${colorTransitionDuration}s ease-in-out`
+                }}
+              >
+                {/* The diagonal overlay - modified to properly blend with changing background */}
                 <div
-                  className="absolute -inset-y-px left-1/2 -z-10 ml-10 w-[200%] skew-x-[-30deg] bg-primary-muted opacity-20 ring-1 ring-inset ring-transparent-transparentWhite md:ml-20 lg:ml-36"
+                  className="absolute -inset-y-px left-1/2 -z-10 ml-10 w-[200%] skew-x-[-30deg] opacity-20 ring-1 ring-inset ring-transparent-transparentWhite md:ml-20 lg:ml-36"
+                  style={{ 
+                    backgroundColor: `white`, /* Always use white for overlay */
+                    mixBlendMode: 'overlay', /* Use blend mode for proper effect */
+                    transition: `background-color ${colorTransitionDuration}s ease-in-out`
+                  }}
                   aria-hidden="true"
                 />
                 <div className="relative px-6 pt-8 sm:pt-16 md:pl-16 md:pr-0">
@@ -92,8 +132,12 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                         </div>
                       </div>
                       <div className="px-6 pb-14 pt-6">
-                        {/* Dashboard positioned here */}
-                        <DashboardWrapper darkMode={true} />
+                        {/* Dashboard positioned here with color transition duration and callback */}
+                        <DashboardWrapper 
+                          darkMode={true} 
+                          colorTransitionDuration={colorTransitionDuration}
+                          onColorChange={handleColorChange}
+                        />
                       </div>
                     </div>
                   </div>

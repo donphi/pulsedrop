@@ -99,6 +99,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const darkModeRef = useRef<boolean>(darkMode);
   const bpmTextRef = useRef<HTMLDivElement>(null);
   const bpmFlluctuationEnabledRef = useRef<boolean>(true);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   
   // Refs for color transitions - using simple initialization
   const currentColorRef = useRef<string>(COLORS.GREEN);
@@ -124,11 +125,22 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   // NEW: Add a ref for color transition timeline
   const colorTransitionTimelineRef = useRef<gsap.core.Timeline | null>(null);
   
+  // Drive wrapper/avatar border color off currentState for logical transitions
+  useEffect(() => {
+    const cfg = stateConfigs[currentState];
+    const target = getECGColorImmediate(cfg.bpm);
+    // Update the React-side "paint" so wrapper can read it
+    setDisplayColor(target);
+    // Trigger the GSAP tween
+    transitionColors(target, Math.min(colorTransitionDuration, cfg.duration * 0.5));
+  }, [currentState, colorTransitionDuration, stateConfigs]);
+  
   // Use useLayoutEffect for initial styling to avoid flash
   useLayoutEffect(() => {
     if (avatarBorderRef.current)  avatarBorderRef.current.style.borderColor = displayColor;
-    if (bpmColorRef.current)      bpmColorRef.current.style.color       = displayColor;
+    if (bpmColorRef.current)      bpmColorRef.current.style.color = displayColor;
     if (progressBarRef.current)   progressBarRef.current.style.backgroundColor = displayColor;
+    if (wrapperRef.current)       wrapperRef.current.style.borderColor = displayColor;
   }, [displayColor]);  // repaint if initial color changes
   
   // Configuration for update frequencies (in seconds)
@@ -151,12 +163,17 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     if (targetColorRef.current !== targetColor) {
       targetColorRef.current = targetColor;
       
+      // Update DOM refs directly instead of waiting for React state to trigger repaint
+      if (avatarBorderRef.current) avatarBorderRef.current.style.borderColor = targetColor;
+      if (bpmColorRef.current) bpmColorRef.current.style.color = targetColor;
+      if (progressBarRef.current) progressBarRef.current.style.backgroundColor = targetColor;
+      if (wrapperRef.current) wrapperRef.current.style.borderColor = targetColor;
+      
+      // Fire callback once per color transition
+      onColorChange?.(targetColor);
+      
       // Create a new timeline for color transitions
       const colorTl = gsap.timeline();
-      
-      // Update our local paint color and notify parent ONCE
-      setDisplayColor(targetColor);
-      onColorChange?.(targetColor);
       
       // Transition the ECG line color
       colorTl.to(currentColorRef, {
@@ -168,24 +185,6 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
           drawECGLine();
         }
       });
-      
-      // Transition the avatar border color
-      if (avatarBorderRef.current) {
-        colorTl.to(avatarBorderRef.current, {
-          borderColor: targetColor,
-          duration: duration,
-          ease: "power2.out"
-        }, 0); // Start at the same time as the ECG line transition
-      }
-      
-      // Transition the BPM text color
-      if (bpmColorRef.current) {
-        colorTl.to(bpmColorRef.current, {
-          color: targetColor,
-          duration: duration,
-          ease: "power2.out"
-        }, 0); // Start at the same time
-      }
       
       // Update the pulse rings color
       if (pulseContainerRef.current) {
@@ -199,17 +198,11 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
         });
       }
       
-      // Update progress bar color if it exists
-      if (progressBarRef.current) {
-        colorTl.to(progressBarRef.current, {
-          backgroundColor: targetColor,
-          duration: duration,
-          ease: "power2.out"
-        }, 0); // Start at the same time
-      }
-      
       // Store the timeline reference
       colorTransitionTimelineRef.current = colorTl;
+      
+      // Update React state ONCE per transition - not during tween
+      setDisplayColor(targetColor);
     }
   };
   
@@ -333,7 +326,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     durationTl.to(metricValues, {
       duration: 0.033,  // Update every ~33ms
       onUpdate: () => {
-        metricValues.duration += 0.011;  // Increment by frame time
+        metricValues.duration += 0.033;  // Increment by frame time
         if (durationValueRef.current) {
           durationValueRef.current.textContent = metricValues.duration.toFixed(1);
         }
@@ -449,23 +442,13 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
           
           // Reset and animate progress bar - use current color
           resetAndAnimateProgressBar(cfg.duration, cfg.bpm);
-          
-          // IMPORTANT: Only trigger color transition on state change, not on every BPM tick
-          const newColor = getECGColorImmediate(cfg.bpm);
-          
-          // Calculate a smooth transition duration
-          // This ensures colors finish transitioning within the state duration
-          const transitionTime = Math.min(colorTransitionDuration, stateDuration * 0.5);
-          
-          // Call the updated transitionColors function with the target color
-          transitionColors(newColor, transitionTime);
         },
         onUpdate: function() {
           const localProgress = (this.progress() || 0);
           
           // If we're approaching the end of this state, start transitioning BPM
-          if (localProgress > 0.7 && nextState) {
-            const t = (localProgress - 0.7) * 3.33; // 0 to 1 during the last 20% of the state
+          if (localProgress > 0.8 && nextState) {
+            const t = (localProgress - 0.8) * 5; // 0 to 1 during the last 20% of the state
             
             // Transition BPM
             const currentBPM = stateConfigs[state].bpm;
@@ -494,15 +477,18 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     const initialColor = getECGColorImmediate(stateConfigs[initialState].bpm);
     transitionColors(initialColor, 0.1); // Fast initial transition
     
-    // 🔥 single, consolidated cleanup
+    // 🔥 single, consolidated cleanup - kill ALL timelines in one go
     return () => {
-      tl.kill();
-      // also kill our duration updater
-      durationTimelineRef.current?.kill();
-      beatTimelineRef.current?.kill();
-      hrvTimelineRef.current?.kill();
-      heartRateZoneTimelineRef.current?.kill();
-      recoveryRateTimelineRef.current?.kill();
+      [
+        timelineRef.current,
+        beatTimelineRef.current,
+        durationTimelineRef.current,
+        hrvTimelineRef.current,
+        heartRateZoneTimelineRef.current,
+        recoveryRateTimelineRef.current,
+        colorTransitionTimelineRef.current
+      ].forEach(tl => tl?.kill());
+      
       gsap.killTweensOf(bpmTextRef.current);
       gsap.killTweensOf(".ring");
     };
@@ -675,7 +661,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
       
       if (width <= 0 || height <= 0) return;
       
-      const drawHeight = height * 0.7;
+      const drawHeight = height * 0.8;
       const verticalCenter = height / 2;
       
       // Clear the canvas - don't draw grid since that's handled by the background canvas
@@ -696,9 +682,9 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
         ctx.lineJoin = 'round';
         
         ctx.beginPath();
-        ctx.moveTo(ecgPointsRef.current[25].x, verticalCenter - (ecgPointsRef.current[25].y * drawHeight));
+        ctx.moveTo(ecgPointsRef.current[0].x, verticalCenter - (ecgPointsRef.current[0].y * drawHeight));
         
-        for (let i = 26; i < ecgPointsRef.current.length; i++) {
+        for (let i = 1; i < ecgPointsRef.current.length; i++) {
           const point = ecgPointsRef.current[i];
           ctx.lineTo(point.x, verticalCenter - (point.y * drawHeight));
         }
@@ -706,9 +692,9 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
         ctx.stroke();
         
         // Draw the leading circle at the drawing point (now at the beginning/left)
-        const point25 = ecgPointsRef.current[25];
+        const firstPoint = ecgPointsRef.current[0];
         ctx.beginPath();
-        ctx.arc(point25.x, verticalCenter - (point25.y * drawHeight), 4, 0, Math.PI * 2);
+        ctx.arc(firstPoint.x, verticalCenter - (firstPoint.y * drawHeight), 4, 0, Math.PI * 2);
         
         // Use the same color for the fill
         ctx.fillStyle = computedColor;
@@ -785,7 +771,11 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const cardBg = darkMode ? 'bg-card' : 'bg-card';
   
   return (
-    <div className={`p-6 rounded-xl ${bgColor} ${textColor}`}>
+    <div 
+      ref={wrapperRef}
+      className={`p-6 rounded-xl ${bgColor} ${textColor}`}
+      style={{ borderColor: displayColor, borderWidth: '1px', borderStyle: 'solid' }}
+    >
       {/* Header with Activity State and Progress Bar */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
