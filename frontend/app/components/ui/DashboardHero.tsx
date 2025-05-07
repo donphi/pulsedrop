@@ -32,6 +32,17 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
   // Define a consistent color transition duration
   const colorTransitionDuration = 2.5; // 2.5 seconds
   
+  // Helper function to create a transparent version of the current color
+  const getTransparentColor = (color: string, opacity: number) => {
+    // Extract RGB components from hex color
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    
+    // Return rgba format with specified opacity
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+  
   const textColor = darkMode ? 'text-foreground' : 'text-foreground';
   const textColorSecondary = darkMode ? 'text-mutedText' : 'text-mutedText';
   const accentColor = 'text-primary';
@@ -57,8 +68,12 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                 <div className="mt-24 sm:mt-32 lg:mt-16">
                   <a href="#" className="inline-flex space-x-6">
                     <span 
-                      className={`rounded-full ${accentBgLight} px-3 py-1 text-sm/6 font-semibold ring-1 ring-inset ring-transparent-transparentPrimary`}
-                      style={{ color: frameColor, transition: `color ${colorTransitionDuration}s ease-in-out` }}
+                      className="rounded-full px-3 py-1 text-sm/6 font-semibold ring-1 ring-inset ring-transparent-transparentPrimary"
+                      style={{ 
+                        color: frameColor,
+                        backgroundColor: getTransparentColor(frameColor, 0.1), // Dynamic background with 10% opacity
+                        transition: `color ${colorTransitionDuration}s ease-in-out, background-color ${colorTransitionDuration}s ease-in-out`
+                      }}
                     >
                       Elite Dashboard
                     </span>
@@ -77,7 +92,7 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                 <div className="mt-10 flex items-center gap-x-6">
                   <a
                     href="#"
-                    className="rounded-md px-3.5 py-2.5 text-sm font-semibold text-foreground shadow-button hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                    className="rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-button hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                     style={{ 
                       backgroundColor: frameColor,
                       transition: `background-color ${colorTransitionDuration}s ease-in-out`

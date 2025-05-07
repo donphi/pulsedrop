@@ -1,0 +1,18 @@
+# frontend/docker-compose.dev.yml
+version: '3.8'
+
+services:
+  frontend-dev:
+    build:
+      context: . # Specifies the build context is the current directory (frontend/)
+      dockerfile: Dockerfile.dev # Specifies the development Dockerfile to use for building
+    container_name: phd_frontend_dev # Assigns a specific name to the container
+    ports:
+      - "3000:3000" # Maps port 3000 on the host to port 3000 in the container
+    env_file:
+      - .env # Loads environment variables from the .env file located in the frontend directory
+    volumes:
+      - .:/app # Mounts the current directory to /app in the container
+      - /app/node_modules # Prevents the container's node_modules from being overwritten
+    restart: unless-stopped # Configures the container to restart automatically unless manually stopped
+    command: npm run dev # Runs the Next.js development server with hot reloading

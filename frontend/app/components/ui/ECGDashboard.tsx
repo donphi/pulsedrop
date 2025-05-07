@@ -3,6 +3,7 @@
 import React, { useLayoutEffect, useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import Image from 'next/image';
+import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/20/solid';
 
 // Types for our different intensity states
 export type IntensityState = 'resting' | 'start' | 'exercise' | 'intense';
@@ -64,6 +65,39 @@ const getECGColorImmediate = (bpm: number): string => {
   }
 };
 
+// Simple RER simulation based on heart rate intensity
+const calculateSimulatedRER = (currentBPM: number, restingBPM: number, maxBPM: number): number => {
+  // Normalize heart rate from 0-1 scale
+  const hrIntensity = (currentBPM - restingBPM) / (maxBPM - restingBPM);
+  
+  // RER ranges from ~0.7 at rest to ~1.1+ at high intensity
+  const baseRER = 0.7;
+  const maxRER = 1.15;
+  
+  // Add a small random factor for natural fluctuation
+  const randomFactor = (Math.random() * 0.04) - 0.02; // ±0.02 variation
+  
+  // Calculate RER with some non-linearity (RER rises faster at higher intensities)
+  const calculatedRER = baseRER + (Math.pow(hrIntensity, 1.3) * (maxRER - baseRER)) + randomFactor;
+  
+  // Ensure value stays in realistic range
+  return Math.max(0.7, Math.min(1.2, parseFloat(calculatedRER.toFixed(2))));
+};
+
+// Helper function to determine change classes
+const getChangeClasses = (changeType: 'increase' | 'decrease' | null, color: string) => {
+  if (!changeType) return '';
+  
+  // Use our COLORS mapping for consistency
+  const bgColor = changeType === 'increase' 
+    ? `rgba(${parseInt(COLORS.GREEN.slice(1, 3), 16)}, ${parseInt(COLORS.GREEN.slice(3, 5), 16)}, ${parseInt(COLORS.GREEN.slice(5, 7), 16)}, 0.1)`
+    : `rgba(${parseInt(COLORS.RED.slice(1, 3), 16)}, ${parseInt(COLORS.RED.slice(3, 5), 16)}, ${parseInt(COLORS.RED.slice(5, 7), 16)}, 0.1)`;
+  
+  const textColor = changeType === 'increase' ? COLORS.GREEN : COLORS.RED;
+  
+  return `inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium`;
+};
+
 // Component that manages the full ECG dashboard
 const ECGDashboard: React.FC<ECGDashboardProps> = ({
   initialState = 'resting',
@@ -83,10 +117,23 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   );
 
   // 🔥 NEW: refs for direct DOM metric updates
-  const durationValueRef      = useRef<HTMLSpanElement>(null);
+  const rerValueRef           = useRef<HTMLSpanElement>(null);
   const hrvValueRef           = useRef<HTMLSpanElement>(null);
-  const heartRateZoneValueRef = useRef<HTMLSpanElement>(null);
   const recoveryRateValueRef  = useRef<HTMLSpanElement>(null);
+  
+  // Add refs for metric changes and values
+  const rerChangeRef = useRef<'increase' | 'decrease' | null>('increase');
+  const hrvChangeRef = useRef<'increase' | 'decrease' | null>('increase');
+  const recoveryRateChangeRef = useRef<'increase' | 'decrease' | null>('increase');
+  
+  const rerChangeValueRef = useRef<HTMLSpanElement>(null);
+  const hrvChangeValueRef = useRef<HTMLSpanElement>(null);
+  const recoveryRateChangeValueRef = useRef<HTMLSpanElement>(null);
+  
+  // Track previous values to calculate changes
+  const prevRerRef = useRef<number>(0.7); // Initial resting RER
+  const prevHrvRef = useRef<number>(stateConfigs[initialState].hrv);
+  const prevRecoveryRateRef = useRef<number>(stateConfigs[initialState].recoveryRate);
   
   // Use refs for values that the animation loop needs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -113,9 +160,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const progressBarRef = useRef<HTMLDivElement>(null);
   
   // Add refs for independent metric timelines
-  const durationTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const rerTimelineRef = useRef<gsap.core.Timeline | null>(null);
   const hrvTimelineRef = useRef<gsap.core.Timeline | null>(null);
-  const heartRateZoneTimelineRef = useRef<gsap.core.Timeline | null>(null);
   const recoveryRateTimelineRef = useRef<gsap.core.Timeline | null>(null);
   
   // Add a timer ID ref for requestAnimationFrame
@@ -123,6 +169,32 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   
   // NEW: Add a ref for color transition timeline
   const colorTransitionTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  
+  // Helper function to determine change type and value
+  const calculateChange = (currentValue: number, previousValue: number): { 
+    changeType: 'increase' | 'decrease' | null,
+    changeValue: string
+  } => {
+    // Handle NaN cases with fallbacks
+    const safeCurrentValue = isNaN(currentValue) ? 0 : currentValue;
+    const safePreviousValue = isNaN(previousValue) ? 0 : previousValue;
+    
+    // If values are the same or previous value is 0, handle specially
+    if (safeCurrentValue === safePreviousValue) return { changeType: null, changeValue: '0.0' };
+    if (safePreviousValue === 0) return { changeType: 'increase', changeValue: '0.0' }; // Avoid division by zero
+    
+    // Calculate the percentage change: (current - previous) / previous * 100
+    const percentageChange = ((safeCurrentValue - safePreviousValue) / Math.abs(safePreviousValue)) * 100;
+    const changeType = percentageChange > 0 ? 'increase' : 'decrease';
+    
+    // Limit to a reasonable range for display (max ±100%)
+    const cappedPercentage = Math.max(-100, Math.min(100, percentageChange));
+    
+    // Format to one decimal place
+    const changeValue = Math.abs(cappedPercentage).toFixed(1);
+    
+    return { changeType, changeValue };
+  };
   
   // Use useLayoutEffect for initial styling to avoid flash
   useLayoutEffect(() => {
@@ -133,9 +205,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   
   // Configuration for update frequencies (in seconds)
   const metricUpdateConfig = {
-    duration: 0.01,    // Update duration every 0.01 seconds
-    hrv: 0.5,         // Update HRV every 0.5 seconds
-    heartRateZone: 0.5, // Update heart rate zone every 0.5 seconds
+    rer: 0.5,          // Update RER every 0.5 seconds
+    hrv: 0.5,          // Update HRV every 0.5 seconds
     recoveryRate: 1.0  // Update recovery rate every 1 second
   };
   
@@ -297,19 +368,25 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const startMetricUpdates = (state: IntensityState) => {
     // Kill old timelines
     beatTimelineRef.current?.kill();
+    rerTimelineRef.current?.kill();
     hrvTimelineRef.current?.kill();
-    heartRateZoneTimelineRef.current?.kill();
     recoveryRateTimelineRef.current?.kill();
     
     const cfg = stateConfigs[state];
     const baseBPM = cfg.bpm;
     const beatDur = 60 / baseBPM;
     
+    // Get min and max heart rates for RER calculation
+    const restingBPM = stateConfigs['resting'].bpm;
+    const maxBPM = stateConfigs['intense'].bpm;
+    
+    // Initialize RER value for this state
+    const initialRER = calculateSimulatedRER(baseBPM, restingBPM, maxBPM);
+    
     // Create local refs to track current values without using React state
     const metricValues = {
-      duration: 0,
+      rer: initialRER,
       hrv: cfg.hrv,
-      heartRateZone: cfg.heartRateZone,
       recoveryRate: cfg.recoveryRate
     };
     
@@ -324,58 +401,129 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
           Math.max(baseBPM - 2, Math.min(baseBPM + 2, baseBPM + flop))
         );
         setCurrentBPM(nextBPM);
+        
+        // Update RER based on new BPM
+        const newRER = calculateSimulatedRER(nextBPM, restingBPM, maxBPM);
+        metricValues.rer = newRER;
+        
+        if (rerValueRef.current) {
+          rerValueRef.current.textContent = newRER.toFixed(2);
+        }
+        
+        // Calculate change for RER
+        const { changeType, changeValue } = calculateChange(newRER, prevRerRef.current);
+        rerChangeRef.current = changeType;
+        prevRerRef.current = newRER;
+        
+        if (rerChangeValueRef.current) {
+          rerChangeValueRef.current.textContent = changeValue;
+          
+          // Update indicator styles based on change direction
+          const parentElement = rerChangeValueRef.current.parentElement;
+          if (parentElement) {
+            parentElement.style.backgroundColor = changeType === 'increase' ? 
+              'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            parentElement.style.color = changeType === 'increase' ? 
+              COLORS.GREEN : COLORS.RED;
+          }
+        }
       }
     });
     beatTimelineRef.current = bpmTl;
     
-    // Instead of using requestAnimationFrame for duration, use a GSAP timeline
-    const durationTl = gsap.timeline({ repeat: -1 });
-    durationTl.to(metricValues, {
-      duration: 0.033,  // Update every ~33ms
-      onUpdate: () => {
-        metricValues.duration += 0.011;  // Increment by frame time
-        if (durationValueRef.current) {
-          durationValueRef.current.textContent = metricValues.duration.toFixed(1);
+    // Create independent timeline for RER updates
+    const rerTl = gsap.timeline({ repeat: -1 });
+    rerTl.to({}, {
+      duration: metricUpdateConfig.rer,
+      onComplete: () => {
+        // Small fluctuations in RER independent of heart rate
+        const fluctuation = (Math.random() * 0.04) - 0.02;
+        metricValues.rer = Math.max(0.7, Math.min(1.2, metricValues.rer + fluctuation));
+        
+        if (rerValueRef.current) {
+          rerValueRef.current.textContent = metricValues.rer.toFixed(2);
+        }
+        
+        // Calculate change for RER
+        const { changeType, changeValue } = calculateChange(metricValues.rer, prevRerRef.current);
+        rerChangeRef.current = changeType;
+        prevRerRef.current = metricValues.rer;
+        
+        if (rerChangeValueRef.current) {
+          rerChangeValueRef.current.textContent = changeValue;
+          
+          // Update indicator styles based on change direction
+          const parentElement = rerChangeValueRef.current.parentElement;
+          if (parentElement) {
+            parentElement.style.backgroundColor = changeType === 'increase' ? 
+              'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            parentElement.style.color = changeType === 'increase' ? 
+              COLORS.GREEN : COLORS.RED;
+          }
         }
       }
     });
-    // 🔥 NEW: keep a ref so we can kill it on teardown
-    durationTimelineRef.current = durationTl;
+    rerTimelineRef.current = rerTl;
     
     // Create independent timeline for HRV updates
     const hrvTl = gsap.timeline({ repeat: -1 });
     hrvTl.to({}, {
       duration: metricUpdateConfig.hrv,
       onComplete: () => {
+        const prevHrv = metricValues.hrv;
         metricValues.hrv = cfg.hrv + (Math.random() * 2 - 1);
+        
         if (hrvValueRef.current) {
           hrvValueRef.current.textContent = metricValues.hrv.toFixed(1);
+        }
+        
+        const { changeType, changeValue } = calculateChange(metricValues.hrv, prevHrvRef.current);
+        hrvChangeRef.current = changeType;
+        prevHrvRef.current = metricValues.hrv;
+        
+        if (hrvChangeValueRef.current) {
+          hrvChangeValueRef.current.textContent = changeValue;
+          
+          // Update indicator styles based on change direction
+          const parentElement = hrvChangeValueRef.current.parentElement;
+          if (parentElement) {
+            parentElement.style.backgroundColor = changeType === 'increase' ? 
+              'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            parentElement.style.color = changeType === 'increase' ? 
+              COLORS.GREEN : COLORS.RED;
+          }
         }
       }
     });
     hrvTimelineRef.current = hrvTl;
-    
-    // Create independent timeline for Heart Rate Zone updates
-    const heartRateZoneTl = gsap.timeline({ repeat: -1 });
-    heartRateZoneTl.to({}, {
-      duration: metricUpdateConfig.heartRateZone,
-      onComplete: () => {
-        metricValues.heartRateZone = cfg.heartRateZone + (Math.random() * 0.1 - 0.05);
-        if (heartRateZoneValueRef.current) {
-          heartRateZoneValueRef.current.textContent = metricValues.heartRateZone.toFixed(1);
-        }
-      }
-    });
-    heartRateZoneTimelineRef.current = heartRateZoneTl;
     
     // Create independent timeline for Recovery Rate updates
     const recoveryRateTl = gsap.timeline({ repeat: -1 });
     recoveryRateTl.to({}, {
       duration: metricUpdateConfig.recoveryRate,
       onComplete: () => {
+        const prevRecoveryRate = metricValues.recoveryRate;
         metricValues.recoveryRate = cfg.recoveryRate + (Math.random() * 0.2 - 0.1);
+        
         if (recoveryRateValueRef.current) {
           recoveryRateValueRef.current.textContent = metricValues.recoveryRate.toFixed(1);
+        }
+        
+        const { changeType, changeValue } = calculateChange(metricValues.recoveryRate, prevRecoveryRateRef.current);
+        recoveryRateChangeRef.current = changeType;
+        prevRecoveryRateRef.current = metricValues.recoveryRate;
+        
+        if (recoveryRateChangeValueRef.current) {
+          recoveryRateChangeValueRef.current.textContent = changeValue;
+          
+          // Update indicator styles based on change direction
+          const parentElement = recoveryRateChangeValueRef.current.parentElement;
+          if (parentElement) {
+            parentElement.style.backgroundColor = changeType === 'increase' ? 
+              'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            parentElement.style.color = changeType === 'increase' ? 
+              COLORS.GREEN : COLORS.RED;
+          }
         }
       }
     });
@@ -397,6 +545,22 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     // Ensure the current BPM is set to the initial state's BPM
     setCurrentBPM(stateConfigs[initState].bpm);
     
+    // Get min and max heart rates for RER calculation
+    const restingBPM = stateConfigs['resting'].bpm;
+    const maxBPM = stateConfigs['intense'].bpm;
+    
+    // Initialize RER value
+    const initialRER = calculateSimulatedRER(stateConfigs[initState].bpm, restingBPM, maxBPM);
+    
+    // Initialize change refs for metrics
+    rerChangeRef.current = 'increase';
+    hrvChangeRef.current = 'increase';
+    recoveryRateChangeRef.current = 'increase';
+    
+    prevRerRef.current = initialRER;
+    prevHrvRef.current = stateConfigs[initialState].hrv;
+    prevRecoveryRateRef.current = stateConfigs[initialState].recoveryRate;
+    
     // Create new timeline
     const tl = gsap.timeline({
       repeat: -1,
@@ -406,9 +570,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     });
     
     // Create refs for stats elements that will be updated directly through DOM
-    const durationRef = { current: 0 };
+    const rerRef = { current: initialRER };
     const hrvRef = { current: stateConfigs[initialState].hrv };
-    const heartRateZoneRef = { current: stateConfigs[initialState].heartRateZone };
     const recoveryRateRef = { current: stateConfigs[initialState].recoveryRate };
     
     // Add each state to the timeline
@@ -429,17 +592,28 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
           // Set the current BPM to this state's BPM
           setCurrentBPM(cfg.bpm);
           
+          // Calculate initial RER for this state
+          const newRER = calculateSimulatedRER(cfg.bpm, restingBPM, maxBPM);
+          
+          // Initialize change values for each state
+          if (rerChangeValueRef.current) rerChangeValueRef.current.textContent = "0.02";
+          if (hrvChangeValueRef.current) hrvChangeValueRef.current.textContent = "0.5";
+          if (recoveryRateChangeValueRef.current) recoveryRateChangeValueRef.current.textContent = "0.5";
+          
+          // Reset metric indicators to "increase" for new phase
+          rerChangeRef.current = 'increase';
+          hrvChangeRef.current = 'increase';
+          recoveryRateChangeRef.current = 'increase';
+          
           // Initial values for stats - just for the first render
           // After this, GSAP will directly update the DOM
-          if (durationValueRef.current) durationValueRef.current.textContent = "0.0";
+          if (rerValueRef.current) rerValueRef.current.textContent = newRER.toFixed(2);
           if (hrvValueRef.current) hrvValueRef.current.textContent = cfg.hrv.toFixed(1);
-          if (heartRateZoneValueRef.current) heartRateZoneValueRef.current.textContent = cfg.heartRateZone.toFixed(1);
           if (recoveryRateValueRef.current) recoveryRateValueRef.current.textContent = cfg.recoveryRate.toFixed(1);
           
           // Reset stats refs
-          durationRef.current = 0;
+          rerRef.current = newRER;
           hrvRef.current = cfg.hrv;
-          heartRateZoneRef.current = cfg.heartRateZone;
           recoveryRateRef.current = cfg.recoveryRate;
           
           // Start the three repeaters - all at once for instant state change
@@ -497,11 +671,10 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     // 🔥 single, consolidated cleanup
     return () => {
       tl.kill();
-      // also kill our duration updater
-      durationTimelineRef.current?.kill();
+      // also kill our updaters
+      rerTimelineRef.current?.kill();
       beatTimelineRef.current?.kill();
       hrvTimelineRef.current?.kill();
-      heartRateZoneTimelineRef.current?.kill();
       recoveryRateTimelineRef.current?.kill();
       gsap.killTweensOf(bpmTextRef.current);
       gsap.killTweensOf(".ring");
@@ -675,8 +848,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
       
       if (width <= 0 || height <= 0) return;
       
-      const drawHeight = height * 0.7;
-      const verticalCenter = height / 2;
+      const drawHeight = height * 0.4;
+      const verticalCenter = Math.floor(height * (2/3));
       
       // Clear the canvas - don't draw grid since that's handled by the background canvas
       ctx.clearRect(0, 0, width, height);
@@ -785,30 +958,31 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const cardBg = darkMode ? 'bg-card' : 'bg-card';
   
   return (
-    <div className={`p-6 rounded-xl ${bgColor} ${textColor}`}>
+    <div className={`p-6 rounded-xl ${darkMode ? 'bg-background' : 'bg-white'} ${textColor}`}>
       {/* Header with Activity State and Progress Bar */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-xl font-semibold">{stateConfigs[currentState].label}</h2>
-          <div className="text-sm font-medium">
-            {nextState && `Next: ${stateConfigs[nextState].label}`}
-          </div>
+        <h2 className="text-xl font-semibold text-foreground">
+          {stateConfigs[currentState].label}
+        </h2>
+        <div className="text-sm font-medium text-mutedText">
+          {nextState && `Next: ${stateConfigs[nextState].label}`}
+        </div>
         </div>
         
         {/* Progress bar */}
-        <div className="w-full h-2 bg-neutral rounded-full overflow-hidden">
-          <div 
-            ref={progressBarRef}
-            className="h-full rounded-full"
-            style={{ backgroundColor: displayColor }} // Initial style
-          />
-        </div>
+        <div className="w-full h-2 bg-neutral-muted rounded-full overflow-hidden">
+        <div 
+          ref={progressBarRef}
+          className="h-full rounded-full"
+          style={{ backgroundColor: displayColor }}
+        />
       </div>
-      
+      </div>
       {/* Main Content */}
-      <div className="grid grid-cols-3 gap-6 items-start">
-        {/* Avatar + BPM Display */}
-        <div className={`col-span-1 ${cardBg} rounded-xl shadow-card p-4 flex flex-col items-center`}>
+      <div className="flex gap-6">
+        {/* Avatar + BPM Display - fixed width column */}
+        <div className={`box-border w-1/3 max-w-[250px] ${cardBg} rounded-xl shadow-card p-6 flex flex-col items-center`}>
           {/* Avatar with pulse rings */}
           <div className="relative mb-4">
             {/* Container for pulse rings */}
@@ -820,9 +994,9 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
             {/* Avatar image */}
             <div
               ref={avatarBorderRef}
-              className="w-32 h-32 rounded-full overflow-hidden relative z-10"
+              className="w-24 h-24 md:w-29 md:h-29 lg:w-32 lg:h-32 rounded-full overflow-hidden relative z-10"
               style={{ 
-                borderColor: displayColor, // Initial style
+                borderColor: displayColor,
                 border: '5px solid' 
               }}
             >
@@ -842,20 +1016,20 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
               <div ref={bpmTextRef} style={{ transformOrigin: "50% 50%" }}>
                 <span
                   ref={bpmColorRef}
-                  className="text-5xl font-bold tabular-nums"
-                  style={{ color: displayColor }} // Initial style
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold tabular-nums"
+                  style={{ color: displayColor }}
                 >
                   {currentBPM}
                 </span>
-                <span className={`ml-1 text-xl ${textColorSecondary} mb-1`}>bpm</span>
+                <span className={`ml-1 text-sm sm:text-base lg:text-xl ${textColorSecondary} mb-1`}>bpm</span>
               </div>
             </div>
           </div>
         </div>
         
-        {/* ECG Display - with separate layers for grid and ECG line */}
-        <div className={`col-span-2 ${cardBg} rounded-xl shadow-card overflow-hidden`}>
-          <div className="p-4 h-64 relative">
+        {/* ECG Display - maintains height with flex-grow */}
+        <div className={`flex-grow ${cardBg} rounded-xl shadow-card overflow-hidden`}>
+          <div className="relative h-full">
             {/* Grid background canvas */}
             <canvas 
               ref={gridCanvasRef}
@@ -869,70 +1043,98 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
           </div>
         </div>
       </div>
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4 mt-6">
-        {/* Duration - Simplified to static indicator */}
-        <div className={`${cardBg} rounded-xl shadow-card p-4`}>
-          <div className="flex items-baseline justify-between">
+      {/* Stats card Section */}
+      <div className="flex gap-6 mt-6 justify-center">
+        {/* Left card - matches avatar width */}
+        <div className={`box-border w-1/3 max-w-[250px] ${cardBg} rounded-xl shadow-card p-6`}>
+          <div className={`mb-2 text-sm font-semibold ${textColorSecondary}`}>Respiratory Exchange</div>
+          <div className="flex flex-col md:flex-row md:items-baseline md:justify-between">
             <div className="flex items-baseline">
-              <span ref={durationValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">0.0</span>
-              <span className={`ml-2 text-sm ${textColorSecondary}`}>sec</span>
+              <span ref={rerValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">0.70</span>
+              <span className={`ml-2 text-sm ${textColorSecondary}`}>ratio</span>
             </div>
-            {/* Static indicator */}
-            <div className="text-sm px-2 py-1 rounded-full whitespace-nowrap bg-success-muted text-success">
-              +0.5
+            {/* Dynamic indicator - moved to its own row */}
+            <div 
+              className="mt-2 inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium self-start"
+              style={{ 
+                backgroundColor: rerChangeRef.current === 'increase' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                color: rerChangeRef.current === 'increase' ? COLORS.GREEN : COLORS.RED
+              }}
+            >
+              {rerChangeRef.current === 'increase' ? (
+                <ArrowUpIcon className="-ml-1 mr-0.5 w-5 h-5 shrink-0 self-center" aria-hidden="true" />
+              ) : (
+                <ArrowDownIcon className="-ml-1 mr-0.5 w-5 h-5 shrink-0 self-center" aria-hidden="true" />
+              )}
+              <span className="sr-only">
+                {rerChangeRef.current === 'increase' ? 'Increased' : 'Decreased'} by
+              </span>
+              <span ref={rerChangeValueRef}>0</span><span>%</span>
             </div>
           </div>
-          <div className={`mt-1 text-sm ${textColorSecondary}`}>Duration</div>
         </div>
         
-        {/* HRV - Simplified to static indicator */}
-        <div className={`${cardBg} rounded-xl shadow-card p-4`}>
-          <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline">
-              <span ref={hrvValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">{stateConfigs[initialState].hrv.toFixed(1)}</span>
-              <span className={`ml-2 text-sm ${textColorSecondary}`}>ms</span>
-            </div>
-            {/* Static indicator */}
-            <div className="text-sm px-2 py-1 rounded-full whitespace-nowrap bg-success-muted text-success">
-              +2.0
+        {/* HRV - flexible width */}
+        <div className={`box-border flex-1 ${cardBg} rounded-xl shadow-card p-6`}>
+          <div className="flex flex-col h-full justify-between">
+            <div className={`text-sm font-semibold ${textColorSecondary}`}>HRV</div>
+            <div className="flex flex-col md:flex-row md:items-baseline md:justify-between">
+              <div className="flex items-baseline">
+                <span ref={hrvValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">{stateConfigs[initialState].hrv.toFixed(1)}</span>
+                <span className={`ml-2 text-sm ${textColorSecondary}`}>ms</span>
+              </div>
+            {/* Dynamic indicator - moved to its own row */}
+            <div
+              className="mt-2 inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium self-start"
+              style={{ 
+                backgroundColor: hrvChangeRef.current === 'increase' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                color: hrvChangeRef.current === 'increase' ? COLORS.GREEN : COLORS.RED
+              }}
+            >
+              {hrvChangeRef.current === 'increase' ? (
+                <ArrowUpIcon className="-ml-1 mr-0.5 w-5 h-5 shrink-0 self-center" aria-hidden="true" />
+              ) : (
+                <ArrowDownIcon className="-ml-1 mr-0.5 w-5 h-5 shrink-0 self-center" aria-hidden="true" />
+              )}
+              <span className="sr-only">
+                {hrvChangeRef.current === 'increase' ? 'Increased' : 'Decreased'} by
+              </span>
+              <span ref={hrvChangeValueRef}>0.0</span><span>%</span>
             </div>
           </div>
-          <div className={`mt-1 text-sm ${textColorSecondary}`}>Heart Rate Variability</div>
         </div>
-        
-        {/* Heart Rate Zone - Simplified to static indicator */}
-        <div className={`${cardBg} rounded-xl shadow-card p-4`}>
-          <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline">
-              <span ref={heartRateZoneValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">{stateConfigs[initialState].heartRateZone.toFixed(1)}</span>
-              <span className={`ml-2 text-sm ${textColorSecondary}`}>zone</span>
-            </div>
-            {/* Static indicator */}
-            <div className="text-sm px-2 py-1 rounded-full whitespace-nowrap bg-success-muted text-success">
-              +0.2
-            </div>
-          </div>
-          <div className={`mt-1 text-sm ${textColorSecondary}`}>Heart Rate Zone</div>
         </div>
-        
-        {/* Recovery Rate - Simplified to static indicator */}
-        <div className={`${cardBg} rounded-xl shadow-card p-4`}>
-          <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline">
+        {/* Recovery Rate - flexible width */}
+        <div className={`box-border flex-1 ${cardBg} rounded-xl shadow-card p-6`}>
+        <div className="flex flex-col h-full justify-between">
+          <div className={`text-sm font-semibold ${textColorSecondary}`}>Recovery Rate</div>
+          <div className="flex flex-col md:flex-row md:items-baseline md:justify-between">
+            <div className="flex mt-auto items-baseline">
               <span ref={recoveryRateValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">{stateConfigs[initialState].recoveryRate.toFixed(1)}</span>
               <span className={`ml-2 text-sm ${textColorSecondary}`}>%</span>
             </div>
-            {/* Static indicator */}
-            <div className="text-sm px-2 py-1 rounded-full whitespace-nowrap bg-success-muted text-success">
-              +0.5
+            {/* Dynamic indicator - moved to its own row */}
+            <div
+              className="mt-2 inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium self-start"
+              style={{ 
+                backgroundColor: recoveryRateChangeRef.current === 'increase' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                color: recoveryRateChangeRef.current === 'increase' ? COLORS.GREEN : COLORS.RED
+              }}
+            >
+              {recoveryRateChangeRef.current === 'increase' ? (
+                <ArrowUpIcon className="-ml-1 mr-0.5 w-5 h-5 shrink-0 self-center" aria-hidden="true" />
+              ) : (
+                <ArrowDownIcon className="-ml-1 mr-0.5 w-5 h-5 shrink-0 self-center" aria-hidden="true" />
+              )}
+              <span className="sr-only">
+                {recoveryRateChangeRef.current === 'increase' ? 'Increased' : 'Decreased'} by
+              </span>
+              <span ref={recoveryRateChangeValueRef}>0.0</span><span>%</span>
             </div>
           </div>
-          <div className={`mt-1 text-sm ${textColorSecondary}`}>Recovery Rate</div>
         </div>
       </div>
-      
+      </div>
       {/* Add CSS for pulse rings */}
       <style jsx global>{`
         .pulse-ring {
