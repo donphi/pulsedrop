@@ -31,10 +31,10 @@ export default function HeroSection() {
                   </a>
                 </div>
                 <h1 className="mt-10 text-pretty text-5xl font-semibold tracking-tight text-foreground sm:text-7xl">
-                  Studying Heart-Rate Dynamics in Elite Cycling
+                  Tracking Recovery Dynamics in High-Performance Cyclists
                 </h1>
                 <p className="mt-8 text-pretty text-lg font-medium text-mutedText sm:text-xl">
-                  PulseDrop collects real-time BPM data during high-intensity intervals to uncover recovery patterns, inform heart-health strategies, and advance sports science.
+                  PulseDrop captures real-time heart rate data during high-intensity cycling to identify recovery inflection points, enhance cardiovascular research, and advance endurance science.
                 </p>
                 <div className="mt-10 flex items-center gap-x-6">
                   <a

@@ -441,7 +441,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
         metricValues.rer = Math.max(0.7, Math.min(1.2, metricValues.rer + fluctuation));
         
         if (rerValueRef.current) {
-          rerValueRef.current.textContent = metricValues.rer.toFixed(2);
+          const value = isNaN(metricValues.rer) ? 0 : metricValues.rer;
+          rerValueRef.current.textContent = value.toFixed(2);
         }
         
         // Calculate change for RER

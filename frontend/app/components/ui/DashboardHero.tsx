@@ -75,19 +75,19 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                         transition: `color ${colorTransitionDuration}s ease-in-out, background-color ${colorTransitionDuration}s ease-in-out`
                       }}
                     >
-                      Elite Dashboard
+                      PulseDrop
                     </span>
                     <span className={`inline-flex items-center space-x-2 text-sm/6 font-medium ${textColorSecondary}`}>
-                      <span>Real-time performance monitoring</span>
+                      <span>PulseDrop v0.1</span>
                       <ChevronRightIcon className="size-5 text-mutedText" aria-hidden="true" />
                     </span>
                   </a>
                 </div>
                 <h1 className={`mt-10 text-pretty text-5xl font-semibold tracking-tight ${textColor} sm:text-7xl`}>
-                  Performance metrics that feel alive
+                  Measuring Heart Rate Convergence in Intense Cycling
                 </h1>
                 <p className={`mt-8 text-pretty text-lg font-medium ${textColorSecondary} sm:text-xl/8`}>
-                  Experience our cutting-edge monitoring dashboard that visualizes physiological data with unmatched precision and elegance. See how your athletes perform in real-time.
+                  PulseDrop captures real-time heart rate data during intense cycling to identify in-session cardiac convergence, advancing cardiovascular research and endurance science.
                 </p>
                 <div className="mt-10 flex items-center gap-x-6">
                   <a
@@ -98,10 +98,10 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                       transition: `background-color ${colorTransitionDuration}s ease-in-out`
                     }}
                   >
-                    Start monitoring
+                    Join the Study
                   </a>
                   <a href="#" className={`text-sm/6 font-semibold ${textColor}`}>
-                    View demo <span aria-hidden="true">→</span>
+                    Learn About Study <span aria-hidden="true">→</span>
                   </a>
                 </div>
               </div>
@@ -138,14 +138,14 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                 <div className="relative px-6 pt-8 sm:pt-16 md:pl-16 md:pr-0">
                   <div className="mx-auto max-w-2xl md:mx-0 md:max-w-none">
                     <div className="w-screen overflow-hidden rounded-tl-xl bg-card">
-                      <div className="flex bg-neutral hover:bg-neutral-hover ring-1 ring-transparent-transparentWhite">
-                        <div className="-mb-px flex text-sm/6 font-medium text-mutedText">
-                          <div className="border-b border-r border-neutral px-4 py-2 text-foreground">
-                            CyclePerformance.tsx
-                          </div>
-                          <div className="border-r border-neutral px-4 py-2">Dashboard.tsx</div>
+                    <div className="flex bg-card hover:bg-neutral-muted ring-1 ring-transparent-transparentWhite">
+                      <div className="-mb-px flex text-sm/6 font-medium text-foreground">
+                        <div className="border-b border-r border-neutral-muted px-4 py-2 text-foreground font-semibold">
+                          CyclePerformance.tsx
                         </div>
+                        <div className="border-r border-neutral-muted px-4 py-2 text-mutedText">Dashboard.tsx</div>
                       </div>
+                    </div>
                       <div className="px-6 pb-14 pt-6">
                         {/* Dashboard positioned here with color transition duration and callback */}
                         <DashboardWrapper 

@@ -19,7 +19,7 @@ export default function Footer() {
           ))}
         </nav>
         <p className="text-mutedText">
-          &copy; {currentYear} Your Company, Inc. All rights reserved.
+          &copy; {currentYear} Pulse Drop. All rights reserved.
         </p>
       </div>
     </footer>
