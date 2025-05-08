@@ -66,22 +66,27 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                   height={44}
                 />
                 <div className="mt-24 sm:mt-32 lg:mt-16">
-                  <a href="#" className="inline-flex space-x-6">
+                <div className="inline-flex space-x-6">
                     <span 
                       className="rounded-full px-3 py-1 text-sm/6 font-semibold ring-1 ring-inset ring-transparent-transparentPrimary"
                       style={{ 
                         color: frameColor,
-                        backgroundColor: getTransparentColor(frameColor, 0.1), // Dynamic background with 10% opacity
+                        backgroundColor: getTransparentColor(frameColor, 0.1),
                         transition: `color ${colorTransitionDuration}s ease-in-out, background-color ${colorTransitionDuration}s ease-in-out`
                       }}
                     >
                       PulseDrop
                     </span>
-                    <span className={`inline-flex items-center space-x-2 text-sm/6 font-medium ${textColorSecondary}`}>
-                      <span>PulseDrop v0.1</span>
+                    <a 
+                      href="https://github.com/donphi/pulsedrop"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center space-x-2 text-sm/6 font-medium ${textColorSecondary} hover:text-primary transition-colors`}
+                    >
+                      <span>Research Code v0.1</span>
                       <ChevronRightIcon className="size-5 text-mutedText" aria-hidden="true" />
-                    </span>
-                  </a>
+                    </a>
+                  </div>
                 </div>
                 <h1 className={`mt-10 text-pretty text-5xl font-semibold tracking-tight ${textColor} sm:text-7xl`}>
                   Measuring Heart Rate Convergence in Intense Cycling

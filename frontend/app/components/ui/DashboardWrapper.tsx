@@ -64,7 +64,7 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({
       label: 'Steady Exercise',
       bpm: 120,
       color: 'var(--color-primary)',
-      avatar: '/avatars/exersize-cyclist.jpg',
+      avatar: '/avatars/exercise-cyclist.jpg',
       duration: 10,
       hrv: 25.0,
       heartRateZone: 3.5,
