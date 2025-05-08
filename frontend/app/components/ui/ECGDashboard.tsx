@@ -982,8 +982,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
       </div>
       {/* Main Content */}
       <div className="flex gap-6">
-        {/* Avatar + BPM Display - fixed width column */}
-        <div className={`box-border w-1/3 max-w-[250px] ${cardBg} rounded-xl shadow-card p-6 flex flex-col items-center`}>
+        {/* Avatar + BPM Display - fixed width column with max-width constraint */}
+        <div className={`box-border basis-1/3 max-w-[250px] min-w-0 ${cardBg} rounded-xl shadow-card p-6 flex flex-col items-center`}>
           {/* Avatar with pulse rings */}
           <div className="relative mb-4">
             {/* Container for pulse rings */}
@@ -995,7 +995,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
             {/* Avatar image */}
             <div
               ref={avatarBorderRef}
-              className="w-24 h-24 md:w-29 md:h-29 lg:w-32 lg:h-32 rounded-full overflow-hidden relative z-10"
+              className="box-border relative w-full aspect-square rounded-full overflow-hidden border-4 border-current z-10"
               style={{ 
                 borderColor: displayColor,
                 border: '5px solid' 
@@ -1017,12 +1017,12 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
               <div ref={bpmTextRef} style={{ transformOrigin: "50% 50%" }}>
                 <span
                   ref={bpmColorRef}
-                  className="text-3xl sm:text-4xl lg:text-5xl font-bold tabular-nums"
+                  className="text-3xl xxs:text-4xl sm:text-5xl font-bold tabular-nums"
                   style={{ color: displayColor }}
                 >
                   {currentBPM}
                 </span>
-                <span className={`ml-1 text-sm sm:text-base lg:text-xl ${textColorSecondary} mb-1`}>bpm</span>
+                <span className={`ml-1 text-sm xxs:text-base sm:text-lg ${textColorSecondary} mb-1`}>bpm</span>
               </div>
             </div>
           </div>
@@ -1045,16 +1045,19 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
         </div>
       </div>
       {/* Stats card Section */}
-      <div className="flex gap-6 mt-6 justify-center">
+      <div className="flex gap-6 mt-6">
         {/* Left card - matches avatar width */}
-        <div className={`box-border w-1/3 max-w-[250px] ${cardBg} rounded-xl shadow-card p-6`}>
-          <div className={`mb-2 text-sm font-semibold ${textColorSecondary}`}>Respiratory Exchange</div>
+        <div className={`box-border basis-1/3 max-w-[250px] min-w-0 ${cardBg} rounded-xl shadow-card p-6`}>
+          <div className={`mb-2 text-sm font-semibold ${textColorSecondary}`}>
+            <span className="hidden sm:inline">Respiratory Exchange</span>
+            <span className="inline sm:hidden">ReR</span>
+          </div>
           <div className="flex flex-col md:flex-row md:items-baseline md:justify-between">
             <div className="flex items-baseline">
               <span ref={rerValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">0.70</span>
               <span className={`ml-2 text-sm ${textColorSecondary}`}>ratio</span>
             </div>
-            {/* Dynamic indicator - moved to its own row */}
+            {/* Dynamic indicator */}
             <div 
               className="mt-2 inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium self-start"
               style={{ 
@@ -1075,8 +1078,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
           </div>
         </div>
         
-        {/* HRV - flexible width */}
-        <div className={`box-border flex-1 ${cardBg} rounded-xl shadow-card p-6`}>
+        {/* HRV - exactly 1/3 width */}
+        <div className={`box-border w-1/3 ${cardBg} rounded-xl shadow-card p-6`}>
           <div className="flex flex-col h-full justify-between">
             <div className={`text-sm font-semibold ${textColorSecondary}`}>HRV</div>
             <div className="flex flex-col md:flex-row md:items-baseline md:justify-between">
@@ -1084,7 +1087,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
                 <span ref={hrvValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">{stateConfigs[initialState].hrv.toFixed(1)}</span>
                 <span className={`ml-2 text-sm ${textColorSecondary}`}>ms</span>
               </div>
-            {/* Dynamic indicator - moved to its own row */}
+            {/* Dynamic indicator */}
             <div
               className="mt-2 inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium self-start"
               style={{ 
@@ -1105,16 +1108,19 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
           </div>
         </div>
         </div>
-        {/* Recovery Rate - flexible width */}
-        <div className={`box-border flex-1 ${cardBg} rounded-xl shadow-card p-6`}>
+        {/* Recovery Rate - exactly 1/3 width */}
+        <div className={`box-border w-1/3 ${cardBg} rounded-xl shadow-card p-6`}>
         <div className="flex flex-col h-full justify-between">
-          <div className={`text-sm font-semibold ${textColorSecondary}`}>Recovery Rate</div>
+          <div className={`text-sm font-semibold ${textColorSecondary}`}>
+            <span className="hidden sm:inline">Recovery Rate</span>
+            <span className="inline sm:hidden">RR</span>
+          </div>
           <div className="flex flex-col md:flex-row md:items-baseline md:justify-between">
             <div className="flex mt-auto items-baseline">
               <span ref={recoveryRateValueRef} className="text-2xl font-semibold tabular-nums whitespace-nowrap">{stateConfigs[initialState].recoveryRate.toFixed(1)}</span>
               <span className={`ml-2 text-sm ${textColorSecondary}`}>%</span>
             </div>
-            {/* Dynamic indicator - moved to its own row */}
+            {/* Dynamic indicator */}
             <div
               className="mt-2 inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium self-start"
               style={{ 
@@ -1146,6 +1152,22 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
           border: none; /* Remove the border */
           opacity: 0.8; /* Start with higher opacity */
           transform: scale(1);
+        }
+        
+        /* Extra small screens breakpoint */
+        @media (max-width: 360px) {
+          .xxs\\:w-28 {
+            width: 7rem;
+          }
+          .xxs\\:h-28 {
+            height: 7rem;
+          }
+          .xxs\\:text-4xl {
+            font-size: 2.25rem;
+          }
+          .xxs\\:text-base {
+            font-size: 1rem;
+          }
         }
       `}</style>
     </div>
