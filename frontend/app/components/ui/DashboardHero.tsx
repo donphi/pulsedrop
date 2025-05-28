@@ -42,14 +42,10 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
     // Return rgba format with specified opacity
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
-  
   const textColor = darkMode ? 'text-foreground' : 'text-foreground';
   const textColorSecondary = darkMode ? 'text-mutedText' : 'text-mutedText';
-  const accentColor = 'text-primary';
-  const accentBgLight = 'bg-primary-muted-opacity';
-  const accentBgDark = 'bg-primary';
   const bgColor = darkMode ? 'bg-background' : 'bg-background';
-  const glowColor = darkMode ? 'shadow-primaryTransparent' : 'shadow-primaryTransparent';
+  
   
   return (
     <div className={bgColor}>

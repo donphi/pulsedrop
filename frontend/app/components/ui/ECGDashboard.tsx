@@ -145,8 +145,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const currentBpmRef = useRef<number>(currentBPM);
   const darkModeRef = useRef<boolean>(darkMode);
   const bpmTextRef = useRef<HTMLDivElement>(null);
-  const bpmFlluctuationEnabledRef = useRef<boolean>(true);
-  
+
   // Refs for color transitions - using simple initialization
   const currentColorRef = useRef<string>(COLORS.GREEN);
   const targetColorRef = useRef<string>(COLORS.GREEN);
@@ -163,9 +162,6 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const rerTimelineRef = useRef<gsap.core.Timeline | null>(null);
   const hrvTimelineRef = useRef<gsap.core.Timeline | null>(null);
   const recoveryRateTimelineRef = useRef<gsap.core.Timeline | null>(null);
-  
-  // Add a timer ID ref for requestAnimationFrame
-  const timerFrameIdRef = useRef<number | null>(null);
   
   // NEW: Add a ref for color transition timeline
   const colorTransitionTimelineRef = useRef<gsap.core.Timeline | null>(null);
@@ -213,8 +209,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   // Simplified BPM update effect - just keep the ref in sync but don't trigger color changes
   useEffect(() => {
     currentBpmRef.current = currentBPM;
-    startBpmThump();
-  }, [currentBPM]);
+  }, [currentBPM]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Function to transition colors smoothly - REFACTORED to use the duration parameter
   const transitionColors = (targetColor: string, duration: number) => {
@@ -292,8 +287,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     gsap.killTweensOf(progressBarRef.current);
     
     // Get color directly from our hardcoded values
-    const colorToUse = getECGColorImmediate(bpm);
-    
+    getECGColorImmediate(bpm);
+
     gsap.set(progressBarRef.current, {
       width: "0%",
       backgroundColor: displayColor, // Use current display color instead of immediate
@@ -310,7 +305,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   
   useEffect(() => {
     darkModeRef.current = darkMode;
-  }, [darkMode]);
+  }, [darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Function to start BPM text thump animation
   const startBpmThump = () => {
@@ -535,6 +530,9 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   useEffect(() => {
     const states: IntensityState[] = ['resting', 'start', 'exercise', 'intense'];
     
+    // Capture ref values to avoid stale closure warnings
+    const bpmTextElement = bpmTextRef.current;
+    
     // Calculate total duration dynamically from stateConfigs
     const totalDuration = Object.values(stateConfigs).reduce((sum, config) => sum + config.duration, 0);
     
@@ -677,10 +675,10 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
       beatTimelineRef.current?.kill();
       hrvTimelineRef.current?.kill();
       recoveryRateTimelineRef.current?.kill();
-      gsap.killTweensOf(bpmTextRef.current);
+      gsap.killTweensOf(bpmTextElement);
       gsap.killTweensOf(".ring");
     };
-  }, [stateConfigs, cycleDuration, colorTransitionDuration, initialState]);
+  }, [stateConfigs, cycleDuration, colorTransitionDuration, initialState]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Draw the static grid to a separate canvas — improved fade math
   const drawGrid = () => {
@@ -783,12 +781,12 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Update grid when darkMode changes
   useEffect(() => {
     drawGrid();
-  }, [darkMode]);
+  }, [darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Calculate ECG point for a specific phase and intensity
   const calculateECGPoint = (phase: number, intensityFactor: number): number => {

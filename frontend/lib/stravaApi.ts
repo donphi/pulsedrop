@@ -12,13 +12,6 @@ interface StravaTokens {
   expires_at: number;
 }
 
-interface StravaAthlete {
-  strava_id: number;
-  strava_access_token: string | null;
-  strava_refresh_token: string | null;
-  strava_token_expires_at: string | null;
-}
-
 interface StravaActivitySummary {
   id: number;
   name: string;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isValidWebhookEvent, enqueueWebhookEvent, processWebhookEvent } from '@/lib/stravaWebhook';
-import { StravaWebhookEvent, StravaWebhookValidation } from '@/lib/types/strava';
+import { StravaWebhookEvent } from '@/lib/types/strava';
 import { stravaSync } from '@/lib/config';
 
 /**

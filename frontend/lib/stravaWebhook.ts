@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabaseServiceRoleClient';
 import { stravaSync } from './config';
-import { StravaWebhookEvent, WebhookEventRecord } from './types/strava';
+import { StravaWebhookEvent } from './types/strava';
 
 /**
  * Validates a webhook event
