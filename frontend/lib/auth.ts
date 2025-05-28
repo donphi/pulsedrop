@@ -24,7 +24,7 @@ interface StravaAthleteData {
   strava_created_at?: string | null;
   strava_updated_at?: string | null;
   badge_type_id?: number;
-  weight?: number;
+  weight?: number | null;
   profile_original?: string;
   follower_count?: number;
   friend_count?: number;
@@ -199,6 +199,13 @@ export const authOptions: NextAuthOptions = {
         const stravaProfile = profile as StravaProfile;
         const stravaId = stravaProfile.id;
 
+        // REMOVE THIS DEBUG LOGGING:
+        console.log('=== STRAVA PROFILE DEBUG ===');
+        console.log('Full Strava profile:', JSON.stringify(stravaProfile, null, 2));
+        console.log('NextAuth user object:', JSON.stringify(user, null, 2));
+        console.log('NextAuth account object:', JSON.stringify(account, null, 2));
+        console.log('=== END DEBUG ===');
+
         if (!stravaId) {
           console.error('Strava profile missing ID:', stravaProfile);
           return '/login?error=OAuthAccountNotLinked';
@@ -232,7 +239,7 @@ export const authOptions: NextAuthOptions = {
             summit: stravaProfile.summit,
             strava_created_at: stravaProfile.created_at ? new Date(stravaProfile.created_at).toISOString() : null,
             strava_updated_at: stravaProfile.updated_at ? new Date(stravaProfile.updated_at).toISOString() : null,
-            weight: stravaProfile.weight,
+            weight: stravaProfile.weight && stravaProfile.weight > 0 ? stravaProfile.weight : null,
             strava_access_token: account.access_token,
             strava_refresh_token: account.refresh_token,
             strava_token_expires_at: account.expires_at ? new Date(account.expires_at * 1000).toISOString() : null,
@@ -270,11 +277,8 @@ export const authOptions: NextAuthOptions = {
             }
             console.log(`Strava athlete created: ${stravaId}`);
 
-            const newUserEmail = user.email;
-            if (!newUserEmail) {
-                console.error('Email missing from Strava profile/NextAuth user object.');
-                return '/login?error=EmailRequired';
-            }
+            const newUserEmail = user.email || `strava_${stravaId}@placeholder.com`;
+            console.log('Using email for user creation:', newUserEmail);
 
             const { data: existingUserByEmail, error: userEmailError } = await supabaseAdmin
               .from('users')
