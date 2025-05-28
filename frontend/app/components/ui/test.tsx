@@ -98,7 +98,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const currentBpmRef = useRef<number>(currentBPM);
   const darkModeRef = useRef<boolean>(darkMode);
   const bpmTextRef = useRef<HTMLDivElement>(null);
-  const bpmFlluctuationEnabledRef = useRef<boolean>(true);
+  // Removed unused ref
   const wrapperRef = useRef<HTMLDivElement>(null);
   
   // Refs for color transitions - using simple initialization
@@ -119,8 +119,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   const heartRateZoneTimelineRef = useRef<gsap.core.Timeline | null>(null);
   const recoveryRateTimelineRef = useRef<gsap.core.Timeline | null>(null);
   
-  // Add a timer ID ref for requestAnimationFrame
-  const timerFrameIdRef = useRef<number | null>(null);
+  // Ref for color transition timeline
   
   // NEW: Add a ref for color transition timeline
   const colorTransitionTimelineRef = useRef<gsap.core.Timeline | null>(null);
@@ -133,7 +132,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     setDisplayColor(target);
     // Trigger the GSAP tween
     transitionColors(target, Math.min(colorTransitionDuration, cfg.duration * 0.5));
-  }, [currentState, colorTransitionDuration, stateConfigs]);
+  }, [currentState, colorTransitionDuration, stateConfigs, transitionColors]);
   
   // Use useLayoutEffect for initial styling to avoid flash
   useLayoutEffect(() => {
@@ -155,7 +154,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   useEffect(() => {
     currentBpmRef.current = currentBPM;
     startBpmThump();
-  }, [currentBPM]);
+  }, [currentBPM, startBpmThump]);
   
   // Function to transition colors smoothly - REFACTORED to use the duration parameter
   const transitionColors = (targetColor: string, duration: number) => {
@@ -213,8 +212,8 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     // Kill any existing animations immediately
     gsap.killTweensOf(progressBarRef.current);
     
-    // Get color directly from our hardcoded values
-    const colorToUse = getECGColorImmediate(bpm);
+    // Get color from BPM (handled by displayColor)
+    getECGColorImmediate(bpm);
     
     gsap.set(progressBarRef.current, {
       width: "0%",
@@ -489,10 +488,23 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
         colorTransitionTimelineRef.current
       ].forEach(tl => tl?.kill());
       
-      gsap.killTweensOf(bpmTextRef.current);
+      // Store ref value to avoid cleanup issues
+      const bpmTextElement = bpmTextRef.current;
+      gsap.killTweensOf(bpmTextElement);
       gsap.killTweensOf(".ring");
     };
-  }, [stateConfigs, cycleDuration, colorTransitionDuration, initialState]);
+  }, [
+    stateConfigs,
+    cycleDuration,
+    colorTransitionDuration,
+    initialState,
+    nextState,
+    resetAndAnimateProgressBar,
+    startAvatarRings,
+    startBpmThump,
+    startMetricUpdates,
+    transitionColors
+  ]);
   
   // Draw the static grid to a separate canvas — improved fade math
   const drawGrid = () => {

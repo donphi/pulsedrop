@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import ECGDashboard, { IntensityState } from '@/components/ui/ECGDashboard'
 
 interface DashboardWrapperProps {
@@ -16,8 +16,8 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({
   colorTransitionDuration = 2.5, // Default smooth transition of 2.5 seconds
   onColorChange
 }) => {
-  // Capture the current color for parent container styling
-  const [currentColor, setCurrentColor] = useState<string>('#22c55e'); // Default to green
+  // State for color tracking
+  const [_, setCurrentColor] = useState<string>('#22c55e'); // Default to green
   
   // Ref for the container element to apply color transitions
   const containerRef = useRef<HTMLDivElement>(null);

@@ -84,16 +84,9 @@ const calculateSimulatedRER = (currentBPM: number, restingBPM: number, maxBPM: n
   return Math.max(0.7, Math.min(1.2, parseFloat(calculatedRER.toFixed(2))));
 };
 
-// Helper function to determine change classes
-const getChangeClasses = (changeType: 'increase' | 'decrease' | null, color: string) => {
+// Helper function to generate indicator class
+const getIndicatorClass = (changeType: 'increase' | 'decrease' | null) => {
   if (!changeType) return '';
-  
-  // Use our COLORS mapping for consistency
-  const bgColor = changeType === 'increase' 
-    ? `rgba(${parseInt(COLORS.GREEN.slice(1, 3), 16)}, ${parseInt(COLORS.GREEN.slice(3, 5), 16)}, ${parseInt(COLORS.GREEN.slice(5, 7), 16)}, 0.1)`
-    : `rgba(${parseInt(COLORS.RED.slice(1, 3), 16)}, ${parseInt(COLORS.RED.slice(3, 5), 16)}, ${parseInt(COLORS.RED.slice(5, 7), 16)}, 0.1)`;
-  
-  const textColor = changeType === 'increase' ? COLORS.GREEN : COLORS.RED;
   
   return `inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium`;
 };
@@ -466,7 +459,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     hrvTl.to({}, {
       duration: metricUpdateConfig.hrv,
       onComplete: () => {
-        const prevHrv = metricValues.hrv;
+        // Update HRV value
         metricValues.hrv = cfg.hrv + (Math.random() * 2 - 1);
         
         if (hrvValueRef.current) {
@@ -498,7 +491,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
     recoveryRateTl.to({}, {
       duration: metricUpdateConfig.recoveryRate,
       onComplete: () => {
-        const prevRecoveryRate = metricValues.recoveryRate;
+        // Update recovery rate value
         metricValues.recoveryRate = cfg.recoveryRate + (Math.random() * 0.2 - 0.1);
         
         if (recoveryRateValueRef.current) {
@@ -951,7 +944,6 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
   }, []); // No dependencies - the animation loop runs once for the component lifetime
   
   // Classes for dark/light mode using tailwind variables
-  const bgColor = darkMode ? 'bg-background' : 'bg-card';
   const textColor = darkMode ? 'text-foreground' : 'text-foreground';
   const textColorSecondary = darkMode ? 'text-mutedText' : 'text-mutedText';
   const cardBg = darkMode ? 'bg-card' : 'bg-card';
@@ -993,7 +985,7 @@ const ECGDashboard: React.FC<ECGDashboardProps> = ({
             {/* Avatar image */}
             <div
               ref={avatarBorderRef}
-              className="box-border relative w-full aspect-square rounded-full overflow-hidden border-4 border-current z-10"
+              className="box-border relative w-full h-full rounded-full overflow-hidden border-4 border-current z-10"
               style={{ 
                 borderColor: displayColor,
                 border: '5px solid' 
