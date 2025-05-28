@@ -6,6 +6,7 @@
  * Run every 4 hours: At minute 0 of every 4th hour
  */
 
+// Import the polling function from the stravaPolling module
 import { pollForMissedActivities } from '../lib/stravaPolling';
 
 async function main() {
