@@ -16,8 +16,8 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({
   colorTransitionDuration = 2.5, // Default smooth transition of 2.5 seconds
   onColorChange
 }) => {
-  // State for color tracking
-  const [_, setCurrentColor] = useState<string>('#22c55e'); // Default to green
+  // State for color tracking (only need setter)
+  const [, setCurrentColor] = useState<string>('#22c55e'); // Default to green
   
   // Ref for the container element to apply color transitions
   const containerRef = useRef<HTMLDivElement>(null);
