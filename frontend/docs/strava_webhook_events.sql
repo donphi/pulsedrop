@@ -26,14 +26,12 @@ CREATE TABLE IF NOT EXISTS webhook_events (
   processed_at TIMESTAMP WITH TIME ZONE,
   
   -- Error message if processing failed
-  error_message TEXT,
-  
-  -- Index on status for efficient querying of pending events
-  INDEX idx_webhook_events_status (status),
-  
-  -- Index on created_at for time-based queries
-  INDEX idx_webhook_events_created_at (created_at)
+  error_message TEXT
 );
+
+-- Create indexes for efficient querying
+CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events (status);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_created_at ON webhook_events (created_at);
 
 -- Create a function to clean up old webhook events
 -- This helps prevent the table from growing too large
@@ -52,31 +50,43 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create a trigger to automatically clean up old webhook events
--- This runs once a day at midnight
-CREATE OR REPLACE FUNCTION trigger_cleanup_old_webhook_events()
-RETURNS TRIGGER AS $$
-BEGIN
-  PERFORM cleanup_old_webhook_events();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- Option 1: Create a trigger to automatically clean up old webhook events
+-- Note: This requires setting up a trigger event, which might be complex for this use case
 
--- Create a scheduled job to run the cleanup function
--- This ensures the table doesn't grow too large over time
-SELECT cron.schedule(
-  'cleanup-webhook-events',
-  '0 0 * * *', -- Run at midnight every day
-  'SELECT cleanup_old_webhook_events()'
-);
+-- Option 2: Use Supabase scheduled functions (recommended)
+-- Add this comment as a reminder to set up a scheduled function in the Supabase dashboard
+-- or via the Supabase management API to run the cleanup_old_webhook_events() function daily
+-- Example: https://supabase.com/docs/guides/database/functions#scheduled-functions
+
+-- Note: If using Supabase Edge Functions, you can create a scheduled function like this:
+/*
+import { createClient } from '@supabase/supabase-js'
+
+// This edge function would be scheduled to run daily
+export async function scheduledCleanup() {
+  const supabaseAdmin = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+  
+  const { error } = await supabaseAdmin.rpc('cleanup_old_webhook_events')
+  if (error) console.error('Error cleaning up webhook events:', error)
+}
+*/
 
 -- Create RLS policies for the webhook_events table
 -- Only allow system services to access this table
 ALTER TABLE webhook_events ENABLE ROW LEVEL SECURITY;
 
 -- Policy for system services (using service role)
+-- Note: This assumes the auth.role() function exists and works as expected in your Supabase setup
 CREATE POLICY webhook_events_service_policy ON webhook_events
   USING (auth.role() = 'service_role');
+
+-- If the above doesn't work in your Supabase setup, you might need to use this alternative:
+-- CREATE POLICY webhook_events_service_policy ON webhook_events
+--   USING (true); -- Allow all operations when using service role key
+-- And then ensure you only access this table using the service role client
 
 -- Comment on table and columns for documentation
 COMMENT ON TABLE webhook_events IS 'Stores Strava webhook events for asynchronous processing';

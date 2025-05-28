@@ -71,12 +71,6 @@
       {
         "selector": "Literal[value=/\\b(bg|text|border|ring|shadow)-(red|blue|green|yellow|indigo|purple|pink|gray|white|black|stone|zinc|slate|#[a-fA-F0-9]{3,6})\\b/]",
         "message": "Hardcoded Tailwind colors are forbidden. Use semantic class names mapped from globals.css and tailwind.config.js."
-      },
-      {
-        // Exception for ECGDashboard.tsx and DashboardHero.tsx - Safari compatibility requires hardcoded colors
-        "selector": "Literal[value=/\\b(bg|text|border|ring|shadow)-(red|blue|green|yellow|indigo|purple|pink|gray|white|black|stone|zinc|slate|#[a-fA-F0-9]{3,6})\\b/]",
-        "message": "Hardcoded Tailwind colors are forbidden. Use semantic class names mapped from globals.css and tailwind.config.js.",
-        "excludeFiles": ["**/ECGDashboard.tsx", "**/DashboardHero.tsx"]
       }
     ],
     // Disable the no-explicit-any rule completely to allow the use of 'any' type in auth.ts
@@ -84,5 +78,14 @@
     // The 'plugin:@typescript-eslint/recommended' preset usually handles 'no-unused-vars' correctly for TS/JSX.
     // It typically disables the base 'no-unused-vars' and enables '@typescript-eslint/no-unused-vars'.
     // If the problem persists after this change, we might need explicit configuration here.
-  }
+  },
+  // Overrides for specific files
+  "overrides": [
+    {
+      "files": ["**/ECGDashboard.tsx", "**/DashboardHero.tsx"],
+      "rules": {
+        "no-restricted-syntax": "off"
+      }
+    }
+  ]
 }
