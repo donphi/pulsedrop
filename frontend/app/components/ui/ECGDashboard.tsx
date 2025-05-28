@@ -84,8 +84,7 @@ const calculateSimulatedRER = (currentBPM: number, restingBPM: number, maxBPM: n
   return Math.max(0.7, Math.min(1.2, parseFloat(calculatedRER.toFixed(2))));
 };
 
-// Indicator class string
-const indicatorClass = `inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium`;
+// No unused variables
 
 // Component that manages the full ECG dashboard
 const ECGDashboard: React.FC<ECGDashboardProps> = ({
