@@ -51,9 +51,6 @@ CREATE TABLE IF NOT EXISTS public.strava_athletes (
     consent_version text, -- Version of consent given
     consent_date timestamptz, -- When consent was given
     data_processing_allowed boolean DEFAULT true -- Whether data processing is allowed
-
-    -- Link to application user (uncomment if desired)
-    -- user_id uuid UNIQUE REFERENCES public.users(id) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE public.strava_athletes IS 'Detailed profile and OAuth information for Strava athletes linked to application users. Contains personal data subject to GDPR.';
@@ -78,15 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_strava_athletes_consent ON public.strava_athletes
 -- Enable Row Level Security explicitly
 ALTER TABLE public.strava_athletes ENABLE ROW LEVEL SECURITY;
 
--- Trigger to auto-update updated_at (ensure function exists)
-CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
+-- Trigger to auto-update updated_at
 DROP TRIGGER IF EXISTS on_strava_athletes_updated ON public.strava_athletes;
 CREATE TRIGGER on_strava_athletes_updated
 BEFORE UPDATE ON public.strava_athletes
@@ -99,11 +88,20 @@ FOREIGN KEY (strava_athlete_id)
 REFERENCES public.strava_athletes(strava_id)
 ON DELETE SET NULL;
 
+-- **CRITICAL: Service role bypass - THIS WAS MISSING**
+CREATE POLICY "Service role bypass"
+ON public.strava_athletes
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
 -- Create RLS policies
 -- Policy: Allow users to select their own athlete data
 CREATE POLICY "Users can view their own athlete data"
 ON public.strava_athletes
 FOR SELECT
+TO authenticated
 USING (strava_id IN (
   SELECT strava_athlete_id FROM public.users
   WHERE auth.uid() = id
@@ -113,6 +111,7 @@ USING (strava_id IN (
 CREATE POLICY "Users can update their own athlete data"
 ON public.strava_athletes
 FOR UPDATE
+TO authenticated
 USING (strava_id IN (
   SELECT strava_athlete_id FROM public.users
   WHERE auth.uid() = id
@@ -122,12 +121,14 @@ USING (strava_id IN (
 CREATE POLICY "System can insert athlete data"
 ON public.strava_athletes
 FOR INSERT
-WITH CHECK (true); -- Restricted by application logic during OAuth flow
+TO authenticated, anon
+WITH CHECK (true);
 
 -- Policy: Allow admins and researchers to view all athlete data
 CREATE POLICY "Admins and researchers can view all athlete data"
 ON public.strava_athletes
 FOR SELECT
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users
@@ -139,6 +140,7 @@ USING (
 CREATE POLICY "Admins can update all athlete data"
 ON public.strava_athletes
 FOR UPDATE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users
@@ -150,6 +152,7 @@ USING (
 CREATE POLICY "Admins can delete athlete data"
 ON public.strava_athletes
 FOR DELETE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users
@@ -193,14 +196,3 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION public.anonymize_athlete_data IS 'Anonymizes athlete personal data across all athlete-related tables for GDPR compliance.';
-
--- Create a table for data processing logs if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.data_processing_logs (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at timestamptz NOT NULL DEFAULT now(),
-    event_type text NOT NULL,
-    description text,
-    metadata jsonb
-);
-
-COMMENT ON TABLE public.data_processing_logs IS 'Logs data processing events for GDPR compliance and audit purposes.';

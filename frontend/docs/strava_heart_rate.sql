@@ -41,7 +41,6 @@ COMMENT ON COLUMN public.strava_activity_hr_stream_points.activity_id IS 'Foreig
 COMMENT ON COLUMN public.strava_activity_hr_stream_points.athlete_id IS 'Denormalized foreign key referencing the athlete.';
 COMMENT ON COLUMN public.strava_activity_hr_stream_points.time_offset IS 'Time offset in seconds from the start of the activity for this data point.';
 COMMENT ON COLUMN public.strava_activity_hr_stream_points.heart_rate IS 'Heart rate in beats per minute (BPM) at the specified time offset. Special category health data under GDPR.';
-COMMENT ON COLUMN public.strava_activity_hr_stream_points.unique_hr_point_per_activity IS 'Ensures only one heart rate value exists per time offset within a single activity.';
 COMMENT ON COLUMN public.strava_activity_hr_stream_points.data_retention_end_date IS 'Date after which heart rate data should be anonymized or deleted per GDPR requirements.';
 COMMENT ON COLUMN public.strava_activity_hr_stream_points.is_anonymized IS 'Indicates whether this data point has been anonymized for GDPR compliance.';
 
@@ -53,14 +52,6 @@ CREATE INDEX IF NOT EXISTS idx_strava_hr_points_athlete_activity ON public.strav
 CREATE INDEX IF NOT EXISTS idx_strava_hr_points_data_retention ON public.strava_activity_hr_stream_points(data_retention_end_date);
 
 -- Trigger to update updated_at timestamp
-CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS on_strava_hr_points_updated ON public.strava_activity_hr_stream_points;
 CREATE TRIGGER on_strava_hr_points_updated
 BEFORE UPDATE ON public.strava_activity_hr_stream_points
@@ -70,11 +61,20 @@ EXECUTE FUNCTION public.handle_updated_at();
 -- Enable Row Level Security
 ALTER TABLE public.strava_activity_hr_stream_points ENABLE ROW LEVEL SECURITY;
 
+-- **CRITICAL: Service role bypass**
+CREATE POLICY "Service role bypass"
+ON public.strava_activity_hr_stream_points
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
 -- Create RLS policies
 -- Athletes can view only their own heart rate data, admins and researchers can view all
 CREATE POLICY "Athletes can view their own heart rate data"
 ON public.strava_activity_hr_stream_points
 FOR SELECT
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -86,12 +86,24 @@ USING (
   )
 );
 
--- Only system processes can insert/update heart rate data
-CREATE POLICY "Only system processes can modify heart rate data"
+-- Only system processes can insert heart rate data
+CREATE POLICY "Only system processes can insert heart rate data"
 ON public.strava_activity_hr_stream_points
-FOR ALL
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = auth.uid() AND role = 'admin'
+  )
+);
+
+-- Only system processes can update heart rate data
+CREATE POLICY "Only system processes can update heart rate data"
+ON public.strava_activity_hr_stream_points
+FOR UPDATE
+TO authenticated
 USING (
-  (auth.jwt() ? 'is_service_role') OR
   EXISTS (
     SELECT 1 FROM public.users
     WHERE id = auth.uid() AND role = 'admin'
@@ -102,6 +114,7 @@ USING (
 CREATE POLICY "Only admins can delete heart rate data"
 ON public.strava_activity_hr_stream_points
 FOR DELETE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users
@@ -210,16 +223,3 @@ GROUP BY
   activity_id;
 
 COMMENT ON VIEW public.aggregated_heart_rate_data IS 'Provides aggregated heart rate statistics for research purposes while preserving privacy.';
-
--- Create RLS policy for the view to allow researchers and admins to access it
-ALTER VIEW public.aggregated_heart_rate_data ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Researchers and admins can access aggregated heart rate data"
-ON public.aggregated_heart_rate_data
-FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM public.users
-    WHERE id = auth.uid() AND role IN ('admin', 'researcher')
-  )
-);

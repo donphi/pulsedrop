@@ -151,17 +151,34 @@ EXECUTE FUNCTION public.handle_updated_at();
 ALTER TABLE public.strava_segments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.strava_segment_efforts ENABLE ROW LEVEL SECURITY;
 
+-- **CRITICAL: Service role bypass for both tables**
+CREATE POLICY "Service role bypass"
+ON public.strava_segments
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Service role bypass"
+ON public.strava_segment_efforts
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
 -- Create RLS policies for strava_segments
 -- Public segments can be viewed by anyone
 CREATE POLICY "Public segments can be viewed by anyone"
 ON public.strava_segments
 FOR SELECT
+TO authenticated, anon
 USING (private = false OR private IS NULL);
 
 -- Private segments can only be viewed by the creator, those with access, or admins/researchers
 CREATE POLICY "Private segments can only be viewed by authorized users"
 ON public.strava_segments
 FOR SELECT
+TO authenticated
 USING (
   private = false OR
   (private = true AND EXISTS (
@@ -185,6 +202,7 @@ USING (
 CREATE POLICY "Admins can modify segment data"
 ON public.strava_segments
 FOR ALL
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users
@@ -197,6 +215,7 @@ USING (
 CREATE POLICY "Athletes can view their own segment efforts"
 ON public.strava_segment_efforts
 FOR SELECT
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -215,6 +234,7 @@ USING (
 CREATE POLICY "Admins can modify segment effort data"
 ON public.strava_segment_efforts
 FOR ALL
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users

@@ -54,7 +54,6 @@ CREATE INDEX IF NOT EXISTS idx_strava_routes_type ON public.strava_routes(type);
 CREATE INDEX IF NOT EXISTS idx_strava_routes_starred ON public.strava_routes(starred);
 CREATE INDEX IF NOT EXISTS idx_strava_routes_data_retention ON public.strava_routes(data_retention_end_date);
 
-
 -- Trigger function (assuming it exists from users.sql)
 -- Apply trigger to update 'updated_at'
 DROP TRIGGER IF EXISTS on_strava_routes_updated ON public.strava_routes;
@@ -66,11 +65,20 @@ EXECUTE FUNCTION public.handle_updated_at();
 -- Enable Row Level Security
 ALTER TABLE public.strava_routes ENABLE ROW LEVEL SECURITY;
 
+-- **CRITICAL: Service role bypass**
+CREATE POLICY "Service role bypass"
+ON public.strava_routes
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
 -- Create RLS policies
 -- Athletes can view their own routes, admins and researchers can view all routes
 CREATE POLICY "Athletes can view their own routes"
 ON public.strava_routes
 FOR SELECT
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -89,6 +97,7 @@ USING (
 CREATE POLICY "Athletes can update their own routes"
 ON public.strava_routes
 FOR UPDATE
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -107,12 +116,14 @@ USING (
 CREATE POLICY "Public routes can be viewed by anyone"
 ON public.strava_routes
 FOR SELECT
+TO authenticated, anon
 USING (private = false AND is_anonymized = false);
 
 -- Only admins can delete routes
 CREATE POLICY "Only admins can delete routes"
 ON public.strava_routes
 FOR DELETE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users
@@ -200,16 +211,3 @@ FROM
   public.strava_routes;
 
 COMMENT ON VIEW public.route_statistics IS 'Provides route statistics without exposing sensitive location data.';
-
--- Enable RLS on the view and allow researchers and admins to access it
-ALTER VIEW public.route_statistics ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Researchers and admins can access route statistics"
-ON public.route_statistics
-FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM public.users
-    WHERE id = auth.uid() AND role IN ('admin', 'researcher')
-  )
-);

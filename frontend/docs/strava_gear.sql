@@ -47,7 +47,6 @@ CREATE INDEX IF NOT EXISTS idx_strava_gear_athlete_id ON public.strava_gear(athl
 CREATE INDEX IF NOT EXISTS idx_strava_gear_data_retention ON public.strava_gear(data_retention_end_date);
 
 -- Trigger to update updated_at timestamp
--- Assumes the function handle_updated_at exists (created in users.sql)
 DROP TRIGGER IF EXISTS on_strava_gear_updated ON public.strava_gear;
 CREATE TRIGGER on_strava_gear_updated
 BEFORE UPDATE ON public.strava_gear
@@ -57,11 +56,20 @@ EXECUTE FUNCTION public.handle_updated_at();
 -- Enable Row Level Security
 ALTER TABLE public.strava_gear ENABLE ROW LEVEL SECURITY;
 
+-- **CRITICAL: Service role bypass**
+CREATE POLICY "Service role bypass"
+ON public.strava_gear
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
 -- Create RLS policies
 -- Athletes can view their own gear, admins and researchers can view all gear
 CREATE POLICY "Athletes can view their own gear"
 ON public.strava_gear
 FOR SELECT
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -80,6 +88,7 @@ USING (
 CREATE POLICY "Athletes can update their own gear"
 ON public.strava_gear
 FOR UPDATE
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -98,6 +107,7 @@ USING (
 CREATE POLICY "Only admins can delete gear"
 ON public.strava_gear
 FOR DELETE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users
@@ -200,16 +210,3 @@ GROUP BY
   brand_name, model_name, frame_type;
 
 COMMENT ON VIEW public.gear_statistics IS 'Provides aggregated gear statistics without exposing personal details.';
-
--- Enable RLS on the view and allow researchers and admins to access it
-ALTER VIEW public.gear_statistics ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Researchers and admins can access gear statistics"
-ON public.gear_statistics
-FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM public.users
-    WHERE id = auth.uid() AND role IN ('admin', 'researcher')
-  )
-);

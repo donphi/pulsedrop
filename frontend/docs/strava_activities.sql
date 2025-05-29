@@ -310,10 +310,40 @@ ALTER TABLE public.strava_activity_laps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.strava_activity_streams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.strava_activity_photos ENABLE ROW LEVEL SECURITY;
 
+-- **CRITICAL: Service role bypass for all tables**
+CREATE POLICY "Service role bypass"
+ON public.strava_activities
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Service role bypass"
+ON public.strava_activity_laps
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Service role bypass"
+ON public.strava_activity_streams
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Service role bypass"
+ON public.strava_activity_photos
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
 -- Create RLS policies for strava_activities
 CREATE POLICY "Athletes can view their own activities"
 ON public.strava_activities
 FOR SELECT
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -328,6 +358,7 @@ USING (
 CREATE POLICY "Athletes can update their own activities"
 ON public.strava_activities
 FOR UPDATE
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -343,6 +374,7 @@ USING (
 CREATE POLICY "Athletes can view their own activity laps"
 ON public.strava_activity_laps
 FOR SELECT
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -358,6 +390,7 @@ USING (
 CREATE POLICY "Athletes can view their own activity streams"
 ON public.strava_activity_streams
 FOR SELECT
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -373,6 +406,7 @@ USING (
 CREATE POLICY "Athletes can view their own activity photos"
 ON public.strava_activity_photos
 FOR SELECT
+TO authenticated
 USING (
   athlete_id IN (
     SELECT strava_id FROM public.strava_athletes
@@ -388,6 +422,7 @@ USING (
 CREATE POLICY "Admins can delete activities"
 ON public.strava_activities
 FOR DELETE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users

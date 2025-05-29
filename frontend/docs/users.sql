@@ -3,6 +3,7 @@
 -- GDPR Compliant: Contains personal data requiring Row Level Security
 
 -- COMPLETE DATABASE CLEANUP - Remove ALL existing tables and types
+DROP TABLE IF EXISTS public.webhook_events CASCADE;
 DROP TABLE IF EXISTS public.strava_activity_hr_stream_points CASCADE;
 DROP TABLE IF EXISTS public.strava_segment_efforts CASCADE;
 DROP TABLE IF EXISTS public.strava_segments CASCADE;
@@ -90,36 +91,43 @@ EXECUTE FUNCTION public.handle_updated_at();
 -- Enable Row Level Security
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
--- *** FIXED RLS POLICIES FOR NEXTAUTH ***
+-- CORRECTED RLS POLICIES FOR NEXTAUTH
 
--- 1. Allow service role (NextAuth) to do everything - CORRECTED SYNTAX
-CREATE POLICY "Allow service role operations"
+-- 1. Service role bypass (for NextAuth operations)
+CREATE POLICY "Service role bypass"
 ON public.users
 FOR ALL
-USING (auth.role() = 'service_role');
-
--- 2. Allow system to insert users (for OAuth registration)
-CREATE POLICY "Allow system user creation"
-ON public.users
-FOR INSERT
+TO service_role
+USING (true)
 WITH CHECK (true);
 
--- 3. Allow authenticated users to view their own data
-CREATE POLICY "Users can view their own data"
+-- 2. Allow authenticated users to view their own data
+CREATE POLICY "Users can view own data"
 ON public.users
 FOR SELECT
+TO authenticated
 USING (auth.uid() = id);
 
--- 4. Allow authenticated users to update their own data
-CREATE POLICY "Users can update their own data"
+-- 3. Allow authenticated users to update their own data
+CREATE POLICY "Users can update own data"
 ON public.users
 FOR UPDATE
-USING (auth.uid() = id);
+TO authenticated
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
 
--- 5. Admins and researchers can view all user data
-CREATE POLICY "Admins and researchers can view all user data"
+-- 4. Allow system operations for user creation (NextAuth sign-in flow)
+CREATE POLICY "Allow user creation"
+ON public.users
+FOR INSERT
+TO authenticated, anon
+WITH CHECK (true);
+
+-- 5. Admin access policies
+CREATE POLICY "Admins can view all users"
 ON public.users
 FOR SELECT
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users 
@@ -127,10 +135,10 @@ USING (
   )
 );
 
--- 6. Only admins can update all user data
-CREATE POLICY "Admins can update all user data"
+CREATE POLICY "Admins can update all users"
 ON public.users
 FOR UPDATE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.users 
@@ -196,7 +204,14 @@ ALTER TABLE public.data_processing_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Service role and admins can access logs"
 ON public.data_processing_logs
 FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Admins can access logs"
+ON public.data_processing_logs
+FOR SELECT
+TO authenticated
 USING (
-  auth.role() = 'service_role' OR
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'researcher'))
 );
