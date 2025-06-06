@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange={true}>
           <ThemeSwitcher />
           <div className="flex min-h-screen flex-col">
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 flex items-center justify-center">{children}</main>
             <Footer />
           </div>
         </ThemeProvider>

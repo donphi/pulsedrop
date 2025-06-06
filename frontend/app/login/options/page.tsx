@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
 import { Suspense } from 'react';
 import { AuthTemplate } from '@/components/auth/AuthTemplate';
-import { LoginChoiceForm } from '@/components/auth/LoginChoiceForm';
+import { LoginOptionsForm } from '@/components/auth/LoginOptionsForm';
 
-export default function LoginPage() {
+export default function LoginOptionsPage() {
   return (
     <AuthTemplate
-      title="Sign in to your account"
+      title="Choose sign in method"
     >
       <Suspense fallback={<div>Loading...</div>}>
-        <LoginChoiceForm />
+        <LoginOptionsForm />
       </Suspense>
     </AuthTemplate>
   );
