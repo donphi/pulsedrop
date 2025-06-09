@@ -135,7 +135,7 @@ We may modify these Terms from time to time. We will alert you about any changes
 If you have questions or comments about these Terms, please contact us at:
 
 **Pulse Drop Research Team**
-Email: [tempdon279@gmail.com](mailto:tempdon279@gmail.com)
+Email: [support@pulsedrop.phd](mailto:support@pulsedrop.phd)
 Institution: Westminster University
 `;
 

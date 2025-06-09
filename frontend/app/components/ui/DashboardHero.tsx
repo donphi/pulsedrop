@@ -101,7 +101,7 @@ const DashboardHero: React.FC<HeroProps> = ({ darkMode = false }) => {
                   >
                     Join the Study
                   </a>
-                  <a href="#" className={`text-sm/6 font-semibold ${textColor}`}>
+                  <a href="/login" className={`text-sm/6 font-semibold ${textColor}`}>
                     Learn About Study <span aria-hidden="true">→</span>
                   </a>
                 </div>

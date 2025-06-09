@@ -129,7 +129,7 @@ As a user, you have the following rights regarding your personal data under GDPR
 *   **Right to Object to Processing**: You can object to our processing of your personal data based on legitimate interests.
 *   **Right to Withdraw Consent**: You can withdraw your consent at any time where consent is our legal basis for processing. This will not affect the lawfulness of processing based on consent before its withdrawal. To withdraw consent, you can [describe mechanism, e.g., "use the settings in your Pulse Drop account" or "contact us directly"]. Withdrawing consent may affect your ability to use Pulse Drop.
 
-To exercise any of these rights, please contact us at [privacy@pulsedrop.com](mailto:privacy@pulsedrop.com). We will respond to your request within one month.
+To exercise any of these rights, please contact us at [support@pulsedrop.phd](mailto:support@pulsedrop.phd). We will respond to your request within one month.
 
 ## 10. International Data Transfers
 
@@ -148,7 +148,7 @@ We may update this Privacy Policy from time to time. We will notify you of any s
 If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:
 
 **Pulse Drop Research Team**
-Email: [tempdon279@gmail.com](mailto:tempdon279@gmail.com)
+Email: [support@pulsedrop.phd](mailto:support@pulsedrop.phd)
 Institution: Westminster University
 `;
 
