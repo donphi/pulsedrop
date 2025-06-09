@@ -13,10 +13,6 @@ export default function BackButton() {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
-
   // Define the back arrow animation that moves left and returns twice
   const arrowVariants = {
     initial: { x: 0 },
@@ -29,6 +25,18 @@ export default function BackButton() {
       }
     }
   };
+
+  // Return a placeholder with the same dimensions during SSR to prevent layout shift
+  if (!mounted) {
+    return (
+      <div
+        className="fixed left-8 top-8 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-button"
+        aria-hidden="true"
+      >
+        <ArrowLeft className="h-5 w-5 text-foreground" />
+      </div>
+    );
+  }
 
   return (
     <motion.button

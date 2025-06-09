@@ -104,6 +104,6 @@ import {
 
 export const footerNavigation = [
     { name: 'Login', href: '/login' },
-    { name: 'Privacy Policy', href: '/privacy-policy' },
-    { name: 'Terms & Conditions', href: '/terms-and-conditions' },
+    { name: 'Privacy Policy', href: '/legal/privacy' },
+    { name: 'Terms & Conditions', href: '/legal/terms' },
   ];

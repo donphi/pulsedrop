@@ -162,6 +162,9 @@
   --color-success-muted: rgba(74, 222, 128, 0.1);
 
   --color-overlay: rgba(0,0,0,0.75);
+
+  /* Muted Text for Dark Mode */
+  --color-mutedText: #9ca3af; /* Tailwind gray-400 */
   
   /* ECG Pulse variables - adapted for dark mode */
   --color-ecg-normal: #4ade80; /* Brighter green for dark mode */

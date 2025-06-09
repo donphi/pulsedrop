@@ -1,5 +1,6 @@
 // components/layouts/Footer.tsx
 import { footerNavigation } from '@/lib/config';
+import Link from 'next/link';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -9,13 +10,13 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl flex flex-col items-center justify-center gap-4 text-sm">
         <nav className="flex gap-6">
           {footerNavigation.map((item) => (
-            <a
+            <Link
               key={item.name}
               href={item.href}
               className="hover:text-primary transition-colors duration-200"
             >
               {item.name}
-            </a>
+            </Link>
           ))}
         </nav>
         <p className="text-mutedText">
