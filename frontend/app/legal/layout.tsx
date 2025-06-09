@@ -1,8 +1,13 @@
+"use client"; // Make this a Client Component
+
 // app/(legal)/layout.tsx
 import { type ReactNode } from 'react';
 import BackButton from '@/components/ui/BackButton';
+import { useScrollToTop } from '@/lib/useScrollToTop'; // Import the hook
 
 export default function LegalLayout({ children }: { children: ReactNode }) {
+  useScrollToTop(); // Call the hook
+
   return (
     <div className="relative min-h-screen">
       {/* Content layer */}
