@@ -1,4 +1,5 @@
 // components/layouts/Footer.tsx
+'use client';
 import { footerNavigation } from '@/lib/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
