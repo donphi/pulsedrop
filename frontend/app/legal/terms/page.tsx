@@ -3,12 +3,7 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useScrollToTop } from '@/lib/useScrollToTop';
-
 export default function TermsAndConditions() {
-  // Use the scroll to top hook
-  useScrollToTop();
-  
   // Format the date on the client side
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
