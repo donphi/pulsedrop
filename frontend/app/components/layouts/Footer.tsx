@@ -10,14 +10,26 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl flex flex-col items-center justify-center gap-4 text-sm">
         <nav className="flex gap-6">
           {footerNavigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="hover:text-primary transition-colors duration-200"
-              scroll={true}
-            >
-              {item.name}
-            </Link>
+            item.href.startsWith('/legal/') ? (
+              // Use regular anchor tags for legal pages to force full page reload
+              <a
+                key={item.name}
+                href={item.href}
+                className="hover:text-primary transition-colors duration-200"
+              >
+                {item.name}
+              </a>
+            ) : (
+              // Use Next.js Link for other pages
+              <Link
+                key={item.name}
+                href={item.href}
+                className="hover:text-primary transition-colors duration-200"
+                scroll={true}
+              >
+                {item.name}
+              </Link>
+            )
           ))}
         </nav>
         <p className="text-mutedText">
